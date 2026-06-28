@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>RBFA Digital Match Sheet — Referee (Prototype)</title>
+<style>
+  /* ============================================================
+     RBFA Match Sheet — Referee mobile prototype
+     Self-contained, no build step, no network. Material-inspired UI.
+     Shares the design language of the Team Responsible prototype
+     (rbfa_wedstrijdblad_prototype.html); REF-specific components are
+     added at the end of this stylesheet.
+     ============================================================ */
+  :root{
+    --rbfa-red:#E2001A;          /* primary */
+    --rbfa-red-dark:#B30015;
+    --rbfa-red-08:rgba(226,0,26,.08);
+    --rbfa-red-12:rgba(226,0,26,.12);
+    --surface:#ffffff;
+    --bg:#f1f3f4;               /* Material grey background */
+    --on-surface:#1f1f1f;
+    --on-surface-var:#5f6368;   /* secondary text */
+    --outline:#dadce0;
+    --outline-soft:#e8eaed;
+    --green:#1e8e3e;
+    --green-bg:#e6f4ea;
+    --amber:#b06000;
+    --amber-bg:#fef7e0;
+    --red-bg:#fce8e6;
+    --blue:#1a73e8;
+    --shadow-1:0 1px 2px rgba(60,64,67,.18),0 1px 3px 1px rgba(60,64,67,.10);
+    --shadow-2:0 1px 2px rgba(60,64,67,.18),0 2px 6px 2px rgba(60,64,67,.10);
+    --shadow-3:0 4px 8px 3px rgba(60,64,67,.10),0 1px 3px rgba(60,64,67,.18);
+    --radius:16px;
+    --font:'Roboto','Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:var(--font);
+    background:#202124;
+    color:var(--on-surface);
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;
+  }
+  /* Phone frame */
+  #phone{
+    width:412px;max-width:100vw;height:892px;max-height:100vh;
+    background:var(--bg);position:relative;overflow:hidden;
+    display:flex;flex-direction:column;
+    box-shadow:0 0 0 10px #000, 0 24px 60px rgba(0,0,0,.6);
+    border-radius:38px;
+  }
+  @media (max-width:430px){#phone{border-radius:0;box-shadow:none;height:100vh;}}
+  .status-bar{
+    height:34px;flex:0 0 34px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:13px;font-weight:600;color:#fff;background:var(--rbfa-red);
+  }
+  .status-bar.light{color:var(--on-surface);background:var(--surface);}
+  .status-bar .dots{display:flex;gap:5px;align-items:center;}
+  #screen{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+
+  /* ---------- App bar ---------- */
+  .appbar{
+    background:var(--rbfa-red);color:#fff;display:flex;align-items:center;
+    gap:8px;padding:0 8px;height:60px;flex:0 0 60px;box-shadow:var(--shadow-1);z-index:5;
+  }
+  .appbar .title{font-size:20px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .iconbtn{
+    width:44px;height:44px;border:none;background:transparent;color:inherit;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 44px;
+  }
+  .iconbtn:active{background:rgba(255,255,255,.18);}
+  .iconbtn.dark:active{background:rgba(0,0,0,.08);}
+
+  .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .pad{padding:16px;}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-1);
+    margin-bottom:14px;overflow:hidden;
+  }
+  .card.clickable{cursor:pointer;transition:box-shadow .15s,transform .05s;}
+  .card.clickable:active{transform:scale(.99);box-shadow:var(--shadow-2);}
+
+  .section-title{font-size:13px;font-weight:600;color:var(--on-surface-var);
+    text-transform:uppercase;letter-spacing:.06em;margin:18px 4px 8px;}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    border:none;border-radius:24px;padding:0 24px;height:48px;font-size:15px;font-weight:600;
+    font-family:var(--font);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+    gap:8px;width:100%;transition:transform .05s,box-shadow .15s,background .15s;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--rbfa-red);color:#fff;box-shadow:var(--shadow-1);}
+  .btn-primary:active{background:var(--rbfa-red-dark);}
+  .btn-primary:disabled{background:#e0e0e0;color:#9aa0a6;box-shadow:none;cursor:not-allowed;}
+  .btn-tonal{background:var(--rbfa-red-12);color:var(--rbfa-red-dark);}
+  .btn-text{background:transparent;color:var(--rbfa-red);width:auto;padding:0 12px;height:40px;}
+  .btn-text:active{background:var(--rbfa-red-08);}
+  .btn-green{background:var(--green);color:#fff;box-shadow:var(--shadow-1);}
+  .btn-green:active{background:#15732f;}
+  .btn-green:disabled{background:#e0e0e0;color:#9aa0a6;box-shadow:none;cursor:not-allowed;}
+  .btn-dark{background:#3c4043;color:#fff;}
+  .btn-dark:active{background:#26282b;}
+  .btn-outline{background:#fff;color:var(--on-surface);border:1px solid var(--outline);}
+
+  .bottom-bar{
+    flex:0 0 auto;background:var(--surface);padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--outline-soft);box-shadow:0 -2px 6px rgba(60,64,67,.06);
+  }
+
+  /* ---------- Form fields ---------- */
+  .field{position:relative;margin-bottom:18px;}
+  .field label{display:block;font-size:13px;color:var(--on-surface-var);margin-bottom:6px;font-weight:500;}
+  .field input,.field textarea{
+    width:100%;border:1px solid var(--outline);border-radius:10px;padding:0 14px;
+    font-size:16px;font-family:var(--font);background:var(--surface);color:var(--on-surface);outline:none;
+  }
+  .field input{height:52px;}
+  .field textarea{padding:12px 14px;min-height:88px;resize:vertical;line-height:1.5;}
+  .field input:focus,.field textarea:focus{border-color:var(--rbfa-red);box-shadow:0 0 0 1px var(--rbfa-red);}
+  .field.error input{border-color:var(--rbfa-red);box-shadow:0 0 0 1px var(--rbfa-red);}
+  .field .hint{font-size:12.5px;margin-top:5px;color:var(--on-surface-var);}
+  .field .hint.err{color:var(--rbfa-red);}
+
+  /* ---------- Chips / segmented ---------- */
+  .segmented{display:flex;background:var(--surface);border-bottom:1px solid var(--outline-soft);}
+  .segmented button{
+    flex:1;height:48px;border:none;background:transparent;font-family:var(--font);font-size:14px;
+    font-weight:600;color:var(--on-surface-var);cursor:pointer;position:relative;
+  }
+  .segmented button.active{color:var(--rbfa-red);}
+  .segmented button.active::after{
+    content:"";position:absolute;left:12%;right:12%;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--rbfa-red);
+  }
+
+  /* ---------- Search ---------- */
+  .searchbar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--outline);
+    border-radius:26px;height:48px;padding:0 16px;margin-bottom:12px;}
+  .searchbar input{border:none;outline:none;flex:1;font-size:15px;font-family:var(--font);background:transparent;}
+
+  /* ---------- Filter row (directly under search, no extra gap) ---------- */
+  .filterrow{display:flex;gap:8px;margin:-2px 0 16px;}
+  .filter-chip{flex:0 1 auto;max-width:62%;display:inline-flex;align-items:center;gap:4px;
+    border:1px solid var(--outline);background:#fff;border-radius:18px;height:36px;padding:0 8px 0 14px;
+    font-size:13px;font-weight:500;color:var(--on-surface-var);cursor:pointer;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;}
+  .filter-chip span.lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .filter-chip .x{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex:0 0 24px;
+    border-radius:50%;color:var(--on-surface-var);}
+  .filter-chip .x:active{background:#f1f3f4;}
+  .filter-chip.active{background:var(--rbfa-red-12);border-color:transparent;color:var(--rbfa-red-dark);}
+  .filter-chip svg{flex:0 0 auto;}
+
+  /* ---------- Date picker (calendar grid) ---------- */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-head .lbl{font-size:16px;font-weight:600;}
+  .cal-navbtn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;color:var(--on-surface-var);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .cal-navbtn:active{background:#f1f3f4;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;}
+  .cal-dow{font-size:11.5px;font-weight:600;color:var(--on-surface-var);padding:4px 0 8px;}
+  .cal-day{position:relative;width:36px;height:36px;margin:2px auto;display:flex;align-items:center;justify-content:center;
+    font-size:14px;border:1px solid transparent;background:transparent;font-family:var(--font);color:var(--on-surface);
+    cursor:pointer;border-radius:50%;transition:background .1s;flex-shrink:0;}
+  .cal-day:disabled{color:#d0d2d4;cursor:default;}
+  .cal-day:not(:disabled):not(.selected):active{background:var(--rbfa-red-08);}
+  .cal-day.today{color:var(--rbfa-red);border-color:var(--rbfa-red);font-weight:500;}
+  .cal-day.selected{background:var(--rbfa-red);color:#fff;font-weight:600;border-color:transparent;}
+  .cal-day.has-match::after{content:"";position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
+    width:5px;height:5px;border-radius:50%;background:var(--rbfa-red);}
+  .cal-day.selected.has-match::after{background:#fff;}
+
+  /* ---------- List rows ---------- */
+  .row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border-bottom:1px solid var(--outline-soft);cursor:pointer;}
+  .row:last-child{border-bottom:none;}
+  .row.disabled{cursor:not-allowed;background:#fafafa;}
+  .row.static{cursor:default;}
+  .num{width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:#f1f3f4;border:1px solid var(--outline);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#3c4043;}
+  .row .pname{font-weight:500;font-size:15px;}
+  .row .psub{font-size:12.5px;color:var(--on-surface-var);}
+  .check{width:24px;height:24px;flex:0 0 24px;border:2px solid var(--outline);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;}
+  .check.radio{border-radius:50%;}
+  .check.on{background:var(--rbfa-red);border-color:var(--rbfa-red);}
+  .badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;}
+  .badge.green{background:var(--green-bg);color:var(--green);}
+  .badge.amber{background:var(--amber-bg);color:var(--amber);}
+  .badge.red{background:var(--red-bg);color:var(--rbfa-red-dark);}
+  .badge.grey{background:#f1f3f4;color:var(--on-surface-var);}
+  .badge.blue{background:#e8f0fe;color:var(--blue);}
+
+  .ywarn{display:inline-block;width:10px;height:14px;background:#ffce00;border:1px solid #e6b800;border-radius:2px;
+    margin-left:6px;vertical-align:middle;box-shadow:var(--shadow-1);cursor:pointer;}
+
+  /* ---------- Banners ---------- */
+  .banner{display:flex;gap:10px;padding:12px 14px;border-radius:12px;font-size:13.5px;line-height:1.45;margin-bottom:14px;}
+  .banner.info{background:#e8f0fe;color:#174ea6;}
+  .banner.warn{background:var(--amber-bg);color:var(--amber);}
+  .banner.err{background:var(--red-bg);color:var(--rbfa-red-dark);}
+  .banner.ok{background:var(--green-bg);color:var(--green);}
+  .banner svg{flex:0 0 20px;margin-top:1px;}
+
+  /* ---------- Match header / VS ---------- */
+  .vs{display:flex;align-items:center;justify-content:space-between;text-align:center;}
+  .vs .team{flex:1;}
+  .crest{width:46px;height:46px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:#fff;font-size:15px;}
+  .vs .mid{padding:0 8px;color:#9aa0a6;font-weight:700;font-size:13px;}
+
+  /* meta rows */
+  .meta{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--outline-soft);}
+  .meta:last-child{border-bottom:none;}
+  .meta .mlabel{font-size:12px;color:var(--on-surface-var);}
+  .meta .mval{font-size:14.5px;font-weight:500;}
+
+  /* ---------- Snackbar ---------- */
+  #snackbar{position:absolute;left:14px;right:14px;bottom:18px;background:#323232;color:#fff;
+    border-radius:10px;padding:14px 16px;font-size:14px;box-shadow:var(--shadow-3);z-index:40;
+    transform:translateY(140%);transition:transform .25s;display:flex;align-items:center;gap:12px;}
+  #snackbar.show{transform:translateY(0);}
+  #snackbar .sb-action{color:#ff9a9a;font-weight:700;margin-left:auto;cursor:pointer;white-space:nowrap;}
+
+  /* ---------- Modal / sheet ---------- */
+  .overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:30;display:flex;align-items:flex-end;
+    animation:fade .2s;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));
+    animation:slideup .25s;max-height:90%;overflow-y:auto;}
+  @keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet .grip{width:40px;height:4px;border-radius:4px;background:var(--outline);margin:0 auto 16px;}
+  .sheet h3{margin:0 0 6px;font-size:19px;}
+  .menu-item{display:flex;align-items:center;gap:14px;padding:14px 6px;font-size:15px;cursor:pointer;border-radius:10px;}
+  .menu-item:active{background:#f1f3f4;}
+
+  /* misc */
+  .empty{text-align:center;color:var(--on-surface-var);padding:48px 24px;}
+  .empty svg{opacity:.4;margin-bottom:12px;}
+  .divider{height:1px;background:var(--outline-soft);margin:0 16px;}
+  .req{display:flex;align-items:center;gap:8px;font-size:13.5px;margin:7px 0;color:var(--on-surface-var);}
+  .req.met{color:var(--green);}
+  .req.fail{color:var(--rbfa-red-dark);}
+  .center-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 28px;}
+  .demo-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);color:#fff;
+    border:none;font-family:var(--font);font-size:12px;font-weight:600;padding:5px 10px;border-radius:20px;cursor:pointer;}
+  a.link{color:var(--rbfa-red);font-weight:600;text-decoration:none;cursor:pointer;}
+
+  /* ============================================================
+     REF-SPECIFIC COMPONENTS
+     ============================================================ */
+  /* Live scoreboard */
+  .scoreboard{background:#1f2024;color:#fff;border-radius:0;padding:14px 16px 16px;box-shadow:var(--shadow-1);}
+  .scoreboard .sbtop{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;}
+  .sb-team{flex:1;text-align:center;}
+  .sb-team .crest{width:40px;height:40px;font-size:13px;}
+  .sb-team .nm{font-size:12.5px;font-weight:600;margin-top:2px;line-height:1.2;}
+  .sb-score{font-size:38px;font-weight:800;letter-spacing:3px;padding:0 6px;min-width:96px;text-align:center;}
+  .sb-clock{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:2px;}
+  .sb-min{font-variant-numeric:tabular-nums;font-weight:800;font-size:17px;min-width:46px;text-align:center;}
+  .sb-stepbtn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:transparent;
+    color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .sb-stepbtn:active{background:rgba(255,255,255,.15);}
+  .livedot{width:8px;height:8px;border-radius:50%;background:#34d058;display:inline-block;
+    box-shadow:0 0 0 0 rgba(52,208,88,.7);animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,208,88,.6)}70%{box-shadow:0 0 0 7px rgba(52,208,88,0)}100%{box-shadow:0 0 0 0 rgba(52,208,88,0)}}
+
+  /* Quick actions during live */
+  .qa-row{display:flex;gap:10px;padding:14px 16px 4px;}
+  .qa{flex:1;border:none;border-radius:14px;padding:14px 8px;font-family:var(--font);font-weight:600;font-size:14px;
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:var(--shadow-1);}
+  .qa.primary{background:var(--rbfa-red);color:#fff;}
+  .qa.primary:active{background:var(--rbfa-red-dark);}
+  .qa.tonal{background:#fff;color:var(--on-surface);border:1px solid var(--outline);}
+  .qa:disabled{background:#eee;color:#9aa0a6;box-shadow:none;cursor:not-allowed;}
+
+  /* Event timeline rows */
+  .evt{display:flex;align-items:center;gap:11px;padding:11px 14px;background:#fff;border-bottom:1px solid var(--outline-soft);}
+  .evt:last-child{border-bottom:none;}
+  .evt .emin{width:34px;flex:0 0 34px;font-weight:800;font-size:13px;color:var(--on-surface-var);text-align:right;font-variant-numeric:tabular-nums;}
+  .evt .eico{width:32px;height:32px;flex:0 0 32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f1f3f4;}
+  .evt .etxt{flex:1;min-width:0;}
+  .evt .etitle{font-size:14px;font-weight:600;}
+  .evt .esub{font-size:12px;color:var(--on-surface-var);}
+  .evt .edel{width:34px;height:34px;flex:0 0 34px;border:none;background:transparent;border-radius:50%;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;}
+  .evt .edel:active{background:#f1f3f4;}
+
+  /* Card glyphs */
+  .cardico{display:inline-block;width:12px;height:16px;border-radius:2px;vertical-align:middle;box-shadow:var(--shadow-1);}
+  .cardico.y{background:#ffce00;border:1px solid #e6b800;}
+  .cardico.r{background:var(--rbfa-red);border:1px solid var(--rbfa-red-dark);}
+  .cardico.yr{background:linear-gradient(135deg,#ffce00 0 45%,var(--rbfa-red) 55% 100%);border:1px solid #c99a00;}
+
+  /* Event-type tiles (US-MI-03) */
+  .tilegrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 4px;}
+  .tile{border:1px solid var(--outline);border-radius:16px;padding:18px 12px;display:flex;flex-direction:column;
+    align-items:center;gap:9px;cursor:pointer;background:#fff;text-align:center;transition:transform .05s;}
+  .tile:active{transform:scale(.98);background:#f7f8f9;}
+  .tile .tl{font-weight:700;font-size:14.5px;}
+  .tile .ts{font-size:11.5px;color:var(--on-surface-var);line-height:1.3;}
+  .tile .ticon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+
+  /* Team selector inside forms */
+  .teamsel{display:flex;gap:10px;margin-bottom:18px;}
+  .teamsel button{flex:1;height:58px;border:1px solid var(--outline);border-radius:12px;background:#fff;
+    font-weight:600;font-family:var(--font);font-size:13.5px;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;color:var(--on-surface);}
+  .teamsel button .ts-side{font-size:11px;color:var(--on-surface-var);font-weight:500;}
+  .teamsel button.on{border-color:var(--rbfa-red);background:var(--rbfa-red-08);color:var(--rbfa-red-dark);box-shadow:inset 0 0 0 1px var(--rbfa-red);}
+  .teamsel button.on .ts-side{color:var(--rbfa-red-dark);}
+
+  /* Inline option chips (goal type) */
+  .optrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .opt{border:1px solid var(--outline);background:#fff;border-radius:10px;height:40px;padding:0 14px;font-size:13.5px;
+    font-weight:600;color:var(--on-surface);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .opt.on{background:var(--rbfa-red-12);border-color:transparent;color:var(--rbfa-red-dark);}
+
+  /* Minute stepper inside forms */
+  .stepper{display:flex;align-items:center;border:1px solid var(--outline);border-radius:10px;overflow:hidden;width:fit-content;}
+  .stepper button{width:48px;height:50px;border:none;background:#fff;font-size:22px;cursor:pointer;color:var(--rbfa-red);}
+  .stepper button:active{background:var(--rbfa-red-08);}
+  .stepper .mval{width:66px;height:50px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;
+    border-left:1px solid var(--outline);border-right:1px solid var(--outline);font-variant-numeric:tabular-nums;}
+
+  /* Pick list inside form (scroll-limited) */
+  .picklist{border:1px solid var(--outline-soft);border-radius:12px;overflow:hidden;max-height:230px;overflow-y:auto;margin-bottom:6px;}
+
+  /* Substitution OUT/IN live preview (US-MI-01) */
+  .swap-preview{display:flex;align-items:center;gap:10px;background:#f3f6fb;border:1px solid var(--outline-soft);border-radius:14px;padding:12px;margin-bottom:4px;}
+  .swap-side{flex:1;min-width:0;text-align:center;}
+  .swap-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.02em;padding:2px 8px;border-radius:8px;margin-bottom:6px;}
+  .swap-tag.off{background:var(--rbfa-red-08);color:var(--rbfa-red-dark);}
+  .swap-tag.on{background:var(--green-bg);color:var(--green);}
+  .swap-name{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .swap-name.muted{color:var(--on-surface-var);font-weight:500;}
+  .swap-change{border:none;background:none;color:#1a73e8;font-size:12px;font-weight:600;padding:2px 0 0;cursor:pointer;}
+  .swap-arrow{flex:0 0 24px;display:flex;align-items:center;justify-content:center;}
+
+  /* Validation status tile on the overview */
+  .vstat{display:flex;align-items:center;gap:12px;padding:14px 16px;}
+  .vstat .vicon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .vstat .vt{font-weight:600;font-size:15px;}
+  .vstat .vs2{font-size:12.5px;color:var(--on-surface-var);margin-top:2px;}
+</style>
+</head>
+<body>
+<div id="phone">
+  <div id="statusbar" class="status-bar">
+    <span id="clock">14:45</span>
+    <span class="dots">
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4" width="3" height="8" rx="1"/><rect x="9" y="1.5" width="3" height="10.5" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>
+      <svg width="20" height="12" viewBox="0 0 20 12" fill="currentColor"><path d="M10 3.5c2.3 0 4.4.9 6 2.4l1.4-1.5A12 12 0 0 0 10 1 12 12 0 0 0 2.6 4.4L4 5.9A8.5 8.5 0 0 1 10 3.5z"/><path d="M10 7c1.2 0 2.3.5 3.1 1.3L10 11.5 6.9 8.3A4.5 4.5 0 0 1 10 7z"/></svg>
+      <svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="2.5" stroke="currentColor" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1" fill="currentColor"/><rect x="22" y="4" width="2" height="4" rx="1" fill="currentColor"/></svg>
+    </span>
+  </div>
+  <div id="screen"></div>
+  <div id="snackbar"></div>
+</div>
+
+<script>
+/* ============================================================
+   SEED DATA  (no persistence/back-end — assignment scope)
+   The referee arrives at the venue. Both Team Responsibles have
+   already submitted their match sheets (assumption #13).
+   Demo match: Royal Antwerp FC vs KV Mechelen (same match m1 as
+   in the Team Responsible prototype).
+   ============================================================ */
+const RULES = { starters:11, maxSubs:5 };
+
+// Substitution limits depend on the competition's regulations (US-MI-01).
+// The REF's app must enforce the rules of whichever competition the active
+// match belongs to, not a single fixed number.
+const COMPETITION_SUB_RULES = {
+  'Jupiler Pro League':     { maxSubs:5, note:'Pro League regulations — max 5 substitutions per team, in up to 3 stoppages (excl. half-time).' },
+  'Challenger Pro League':  { maxSubs:5, note:'Challenger Pro League regulations — max 5 substitutions per team.' },
+  'Croky Cup':              { maxSubs:5, note:'Croky Cup regulations — max 5 substitutions per team.' },
+};
+const DEFAULT_SUB_RULES = { maxSubs:5, note:'Standard RBFA substitution rules — max 5 substitutions per team.' };
+function subRules(){ return COMPETITION_SUB_RULES[activeMatch().competition] || DEFAULT_SUB_RULES; }
+
+// --- Home squad: Royal Antwerp FC (mirrors the TR prototype seed) ---
+// Submitted line-up = 11 starters + 7 substitutes. Every submitted player is
+// eligible; a couple carry a non-blocking eligibility advisory (warn) the REF
+// should be aware of (US-VS-03).
+const HOME = {
+  key:'home', side:'Home', name:'Royal Antwerp FC', short:'Royal Antwerp FC',
+  color:'var(--rbfa-red)',
+  submittedAt:'14:35', lateSubmission:false,   // > 20 min before 15:00 kickoff (US-VS-04)
+  players:[
+    {nr:1,  name:'Bram Van Looy',        pos:'Goalkeeper', role:'starter'},
+    {nr:2,  name:'Stijn Vermeersch',     pos:'Defender',   role:'starter', warn:'One booking away from a suspension (4 yellow cards). Eligible to play.'},
+    {nr:4,  name:'Maarten Dockx',        pos:'Defender',   role:'starter'},
+    {nr:5,  name:'Karel Van Rompuy',     pos:'Defender',   role:'starter'},
+    {nr:14, name:'Jasper Van Hoof',      pos:'Defender',   role:'starter'},
+    {nr:7,  name:'Dries Van Hecke',      pos:'Midfielder', role:'starter', warn:'One booking away from a suspension (4 yellow cards). Eligible to play.'},
+    {nr:8,  name:'Ruben Van Damme',      pos:'Midfielder', role:'starter', captain:true},
+    {nr:13, name:'Tom Verhulst',         pos:'Midfielder', role:'starter'},
+    {nr:9,  name:'Niels Lemmens',        pos:'Forward',    role:'starter'},
+    {nr:10, name:'Sebastiaan Cools',     pos:'Forward',    role:'starter'},
+    {nr:11, name:'Wesley De Ridder',     pos:'Forward',    role:'starter'},
+    {nr:12, name:'Tibo Verstraete',      pos:'Goalkeeper', role:'sub'},
+    {nr:15, name:'Lucas Verlinden',      pos:'Forward',    role:'sub'},
+    {nr:16, name:'Pieter-Jan Maes',      pos:'Midfielder', role:'sub'},
+    {nr:17, name:'Brent Van den Berghe', pos:'Defender',   role:'sub'},
+    {nr:18, name:'Glenn Vandenbroucke',  pos:'Forward',    role:'sub'},
+    {nr:20, name:'Arne Peeters',         pos:'Defender',   role:'sub'},
+    {nr:21, name:'Wouter Goossens',      pos:'Midfielder', role:'sub'},
+  ],
+  officials:[
+    {name:'Geert Vandevelde', role:'Head coach (T1)'},
+    {name:'Filip Roose',      role:'Assistant coach (T2)'},
+    {name:'Bart Cools',       role:'Team manager', delegate:true},
+    {name:'Sofie Pauwels',    role:'Physiotherapist'},
+  ],
+};
+
+// --- Away squad: KV Mechelen ---
+const AWAY = {
+  key:'away', side:'Away', name:'KV Mechelen', short:'KV Mechelen',
+  color:'#f7b500',
+  submittedAt:'14:43', lateSubmission:true,    // < 20 min before 15:00 kickoff (US-VS-04)
+  players:[
+    {nr:1,  name:'Lars Vandenberghe',   pos:'Goalkeeper', role:'starter'},
+    {nr:2,  name:'Bilal Ouahbi',        pos:'Defender',   role:'starter'},
+    {nr:3,  name:'Florian Maes',        pos:'Defender',   role:'starter', warn:'One booking away from a suspension (4 yellow cards). Eligible to play.'},
+    {nr:4,  name:'Mathias Coucke',      pos:'Defender',   role:'starter'},
+    {nr:5,  name:'Senne Vanderbeke',    pos:'Defender',   role:'starter'},
+    {nr:6,  name:'Rik Vandenbergh',     pos:'Midfielder', role:'starter', captain:true},
+    {nr:8,  name:'Nordin El Amrani',    pos:'Midfielder', role:'starter'},
+    {nr:10, name:'Victor Lambrechts',   pos:'Midfielder', role:'starter'},
+    {nr:7,  name:'Jens Roggeman',       pos:'Forward',    role:'starter'},
+    {nr:9,  name:'Cédric Marchand',     pos:'Forward',    role:'starter'},
+    {nr:11, name:'Tuur Vangenechten',   pos:'Forward',    role:'starter'},
+    {nr:12, name:'Wout Theunis',        pos:'Goalkeeper', role:'sub'},
+    {nr:15, name:'Aimé Dewulf',         pos:'Defender',   role:'sub'},
+    {nr:14, name:'Owen Beck',           pos:'Defender',   role:'sub'},
+    {nr:16, name:'Stan Verhaeghe',      pos:'Midfielder', role:'sub'},
+    {nr:17, name:'Lowie Vermeiren',     pos:'Midfielder', role:'sub'},
+    {nr:18, name:'Kasper Vandevoorde',  pos:'Forward',    role:'sub'},
+    {nr:20, name:'Ibrahim Diallo',      pos:'Forward',    role:'sub'},
+  ],
+  officials:[
+    {name:'Karel Peeters',     role:'Head coach (T1)'},
+    {name:'Driss Lahssaini',   role:'Assistant coach (T2)'},
+    {name:'Lieve Smets',       role:'Team manager', delegate:true},
+    {name:'Tom Aerts',         role:'Physiotherapist'},
+  ],
+};
+
+// Give every player a stable unique id (team + shirt number).
+HOME.players.forEach(p=>p.pid='H'+p.nr);
+AWAY.players.forEach(p=>p.pid='A'+p.nr);
+
+// The match the REF actively manages (m1) + a few other assigned fixtures
+// for the dashboard (read-only context, US-AA-08).
+const MATCHES = [
+  { id:'m1', dateLabel:'Today', date:'2026-06-26', kickoff:'15:00', kickoffMin:900,
+    competition:'Jupiler Pro League', round:'Matchday 24',
+    home:'Royal Antwerp FC', away:'KV Mechelen',
+    venue:'Bosuilstadion — Pitch 1', city:'Antwerp',
+    referees:['Mr. P. Janssen — referee','Mr. K. Aerts — assistant referee','Ms. L. Coppens — assistant referee'],
+    interactive:true },
+  { id:'m2', dateLabel:'Wed 1 Jul 2026', date:'2026-07-01', kickoff:'20:00',
+    competition:'Jupiler Pro League', round:'Matchday 25',
+    home:'KRC Genk', away:'Club Brugge',
+    venue:'Cegeka Arena', city:'Genk',
+    referees:['Mr. P. Janssen — referee'], staticStatus:'SCHEDULED' },
+  { id:'m3', dateLabel:'Sat 4 Jul 2026', date:'2026-07-04', kickoff:'18:30',
+    competition:'Croky Cup', round:'Round of 16',
+    home:'Union SG', away:'RSC Anderlecht',
+    venue:'Stade Joseph Marien', city:'Brussels',
+    referees:['Mr. P. Janssen — referee'], staticStatus:'SCHEDULED' },
+  { id:'m4', dateLabel:'Sat 20 Jun 2026', date:'2026-06-20', kickoff:'16:00',
+    competition:'Jupiler Pro League', round:'Matchday 23',
+    home:'KAA Gent', away:'KVC Westerlo',
+    venue:'Planet Group Arena', city:'Ghent',
+    referees:['Mr. P. Janssen — referee'], staticStatus:'SUBMITTED', score:'2 - 0' },
+];
+
+/* ============================================================
+   STATUS DEFINITIONS — single source of truth for labels/colors
+   (mirrors 02_Requirements/Status Definitions.md)
+   ============================================================ */
+const MATCH_STATUS = {
+  SCHEDULED:  {label:'Scheduled',   badge:'grey'},
+  READY:      {label:'Validated',   badge:'green'},
+  IN_PROGRESS:{label:'In progress', badge:'blue'},
+  HALF_TIME:  {label:'Half-time',   badge:'amber'},
+  ENDED:      {label:'Full time',   badge:'grey'},
+};
+const SHEET_STATUS = {
+  PENDING_REVIEW:    {label:'Submitted to referee',    badge:'blue'},
+  NEEDS_REVISION:    {label:'Correction required',     badge:'red'},
+  VALIDATED:         {label:'Validated',               badge:'green'},
+  CONFIRMED:         {label:'Confirmed',               badge:'green'},
+  SUBMITTED:         {label:'Submitted to federation', badge:'green'},
+};
+function matchBadge(st){ const d=MATCH_STATUS[st]; return '<span class="badge '+d.badge+'">'+d.label+'</span>'; }
+function sheetBadge(st){ const d=SHEET_STATUS[st]; return '<span class="badge '+d.badge+'">'+d.label+'</span>'; }
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+const state = {
+  screen:'login',
+  user:null,
+  nowMin:885,                 // wall clock 14:45 (REF just arrived; kickoff 15:00)
+  activeMatchId:'m1',
+
+  matchStatus:'SCHEDULED',    // MATCH.status — see Status Definitions §1
+  sheet:{ home:'PENDING_REVIEW', away:'PENDING_REVIEW' },  // per-team MATCH_SHEET.status §2
+  correction:{ home:null, away:null },                     // open correction note per team (US-VS-07)
+
+  kickoffActual:null,         // recorded automatically on start (US-VS-10)
+  half:1,                     // 1 or 2
+  liveMinute:1,               // current match minute (demo clock for event entry)
+  addedTime:{ first:null, second:null },                   // US-MI-12
+
+  events:[],                  // source of truth — replayed by recompute()
+  seq:1,
+  // derived (rebuilt by recompute):
+  pitch:{home:new Set(), away:new Set()},
+  sentOff:new Set(),
+  yellowCount:{},             // pid -> count
+  cameOn:new Set(),
+  subsUsed:{home:0, away:0},
+  score:{home:0, away:0},
+
+  remark:'',                  // US-FS-05
+  submittedFedAt:null,        // US-FS-08
+
+  // ui
+  dashTab:'next',
+  dashSearch:'',               // US-PT-01 search
+  dashDateFilter:null,         // 'YYYY-MM-DD' or null = no date filter
+  dashCompFilters:[],          // US-PT-12 filter
+  calMonth:null,
+  teamTab:'home',             // home/away tab on the team sheet review (US-VS-02)
+  liveTab:'timeline',         // timeline | lineups
+  form:{},                    // scratch state for the open registration sheet
+  loginEmail:'p.janssen@referee.rbfa.be', loginPw:'********', loginErr:'',
+};
+
+/* ============================================================
+   ICONS (inline SVG)
+   ============================================================ */
+const I = {
+  back:'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z"/></svg>',
+  menu:'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"/></svg>',
+  search:'<svg width="22" height="22" viewBox="0 0 24 24" fill="#5f6368"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg>',
+  close:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L12 14.8 5.7 19.7 4.3 18.3 10.6 12 4.3 5.7 5.7 4.3 12 10.6l6.3-6.3z"/></svg>',
+  check:'<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>',
+  caret:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>',
+  chevL:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z"/></svg>',
+  chevR:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z"/></svg>',
+  cup:'<svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368"><path d="M18 2H6v2H2v4a4 4 0 0 0 4 4 6 6 0 0 0 5 3.9V19H8v2h8v-2h-3v-3.1A6 6 0 0 0 18 12a4 4 0 0 0 4-4V4h-4zM6 10a2 2 0 0 1-2-2V6h2zm14-2a2 2 0 0 1-2 2V6h2z"/></svg>',
+  checkc:'<svg width="24" height="24" viewBox="0 0 24 24" fill="#1e8e3e"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15-5-5 1.4-1.4L10 14.2l7.6-7.6L19 8z"/></svg>',
+  warn:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2zm0-4h-2v-4h2z"/></svg>',
+  info:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>',
+  mail:'<svg width="20" height="20" viewBox="0 0 24 24" fill="#5f6368"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5z"/></svg>',
+  key:'<svg width="20" height="20" viewBox="0 0 24 24" fill="#5f6368"><path d="M12.6 10A6 6 0 1 0 7 14a6 6 0 0 0 5.6-4H16v3h3v-3h2v-4zM7 12a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>',
+  players:'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v2h8v-2c0-1 .4-2.6 1.7-3.8C8.9 13.1 8.3 13 8 13zm8 0c-.3 0-.6 0-1 .1 1.3 1 2 2.4 2 3.9v2h7v-2c0-2.7-5.3-4-8-4z"/></svg>',
+  staff:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zM10 4h4v2h-4z"/></svg>',
+  send:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></svg>',
+  cal:'<svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14z"/></svg>',
+  pin:'<svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>',
+  whistle:'<svg width="16" height="16" viewBox="0 0 24 24" fill="#5f6368"><path d="M22 6h-9.4A6 6 0 1 0 8 16a6 6 0 0 0 5.6-4H16v2h2v-2h2v2h2zM8 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>',
+  clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 11h-5v-2h3V7h2z"/></svg>',
+  logout:'<svg width="22" height="22" viewBox="0 0 24 24" fill="#5f6368"><path d="M17 8l-1.4 1.4L17.2 11H9v2h8.2l-1.6 1.6L17 16l4-4zM5 5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H5z"/></svg>',
+  edit:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.2V21h3.8L17.8 10 14 6.2zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83L18.9 8.9z"/></svg>',
+  trash:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#5f6368"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/></svg>',
+  shield:'<svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5z"/></svg>',
+  ball:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2c1.5 0 2.9.4 4.1 1.1l-1.3 2.5-2.8.9-2.8-.9L7.9 5.1A8 8 0 0 1 12 4zM5.6 7.3l2.3 1.6.9 2.9-1.8 2.4-2.6.1A8 8 0 0 1 4 12c0-1.7.5-3.3 1.6-4.7zM8.8 19.3 8 16.6l1.8-2.4h4.4l1.8 2.4-.8 2.7a8 8 0 0 1-6.4 0zm9.7-4.8-2.6-.1-1.8-2.4.9-2.9 2.3-1.6A8 8 0 0 1 20 12c0 .9-.2 1.7-.5 2.5z"/></svg>',
+  swap:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 3 3 7.5l4.5 4.5V9H16V6H7.5zM16.5 21 21 16.5 16.5 12V15H8v3h8.5z"/></svg>',
+  plus:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>',
+  play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  flag:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>',
+  doc:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>',
+  fed:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 3 6v2h18V6zM4 10v8H2v2h20v-2h-2v-8h-2v8h-3v-8h-2v8h-2v-8H7v8H4v-8z"/></svg>',
+  download:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"/></svg>',
+  stop:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>',
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $ = (id)=>document.getElementById(id);
+function fmtTime(min){const h=Math.floor(min/60),m=min%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+function activeMatch(){return MATCHES.find(m=>m.id===state.activeMatchId);}
+function team(key){return key==='home'?HOME:AWAY;}
+function other(key){return key==='home'?'away':'home';}
+function pById(pid){return [...HOME.players,...AWAY.players].find(p=>p.pid===pid);}
+function teamOf(pid){return pid[0]==='H'?'home':'away';}
+function initials(name){return name.split(' ').filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('').toUpperCase();}
+function captainOf(key){return team(key).players.find(p=>p.captain);}
+function delegateOf(key){return team(key).officials.find(o=>o.delegate);}
+function isLate(key){return team(key).lateSubmission;}
+
+let snackTimer=null;
+function snack(msg, actionLabel, actionFn){
+  const sb=$('snackbar');
+  sb.innerHTML = '<span>'+msg+'</span>' + (actionLabel?'<span class="sb-action" id="sbAction">'+actionLabel+'</span>':'');
+  sb.classList.add('show');
+  if(actionLabel){$('sbAction').onclick=()=>{sb.classList.remove('show');actionFn&&actionFn();};}
+  clearTimeout(snackTimer);
+  snackTimer=setTimeout(()=>sb.classList.remove('show'), actionLabel?5000:2600);
+}
+function go(screen){ state.screen=screen; render(); $('screen').scrollTop=0; }
+
+/* ---------- Overlay / bottom-sheet helpers ---------- */
+function openSheet(innerHtml){
+  closeSheet();
+  const ov=document.createElement('div'); ov.className='overlay'; ov.id='ovl';
+  ov.onclick=e=>{if(e.target===ov)closeSheet();};
+  ov.innerHTML=`<div class="sheet" id="sheetBody"><div class="grip"></div>${innerHtml}</div>`;
+  $('phone').appendChild(ov);
+}
+function refreshSheet(innerHtml){ const b=$('sheetBody'); if(b) b.innerHTML=`<div class="grip"></div>${innerHtml}`; }
+function closeSheet(){ $('ovl')?.remove(); }
+
+/* ============================================================
+   DERIVED MATCH STATE — pure reducer over state.events
+   Replaying from scratch keeps add/delete fully consistent
+   (US-MI-07 / US-FS-03), incl. auto yellow/red (US-MI-13).
+   ============================================================ */
+function recompute(){
+  const pitch={home:new Set(),away:new Set()};
+  HOME.players.filter(p=>p.role==='starter').forEach(p=>pitch.home.add(p.pid));
+  AWAY.players.filter(p=>p.role==='starter').forEach(p=>pitch.away.add(p.pid));
+  const sentOff=new Set(), cameOn=new Set(), yellowCount={};
+  const subsUsed={home:0,away:0}, score={home:0,away:0};
+  // replay in insertion order (chronological as entered by the REF)
+  state.events.forEach(ev=>{
+    if(ev.type==='goal'){ score[ev.creditedTeam]++; }
+    else if(ev.type==='yellow'){
+      yellowCount[ev.pid]=(yellowCount[ev.pid]||0)+1;
+      if(yellowCount[ev.pid]===2){ sentOff.add(ev.pid); pitch[teamOf(ev.pid)].delete(ev.pid); }  // auto yellow/red (US-MI-13)
+    }
+    else if(ev.type==='red'){ sentOff.add(ev.pid); pitch[teamOf(ev.pid)].delete(ev.pid); }
+    else if(ev.type==='sub'){
+      pitch[ev.team].delete(ev.outId); pitch[ev.team].add(ev.inId);
+      cameOn.add(ev.inId); subsUsed[ev.team]++;
+    }
+  });
+  state.pitch=pitch; state.sentOff=sentOff; state.cameOn=cameOn;
+  state.yellowCount=yellowCount; state.subsUsed=subsUsed; state.score=score;
+}
+function onPitch(key){ return team(key).players.filter(p=>state.pitch[key].has(p.pid)).sort((a,b)=>a.nr-b.nr); }
+function benchAvailable(key){ // substitutes not yet used and not sent off
+  return team(key).players.filter(p=>p.role==='sub' && !state.cameOn.has(p.pid) && !state.sentOff.has(p.pid)).sort((a,b)=>a.nr-b.nr);
+}
+
+/* ============================================================
+   RENDER ROOT
+   ============================================================ */
+function render(){
+  recompute();
+  $('clock').textContent = fmtTime(state.nowMin);
+  const sb=$('statusbar');
+  const light = ['login'].includes(state.screen);
+  sb.className = 'status-bar'+(light?' light':'');
+  let html='';
+  switch(state.screen){
+    case 'login':     html=ScLogin(); break;
+    case 'dashboard': html=ScDashboard(); break;
+    case 'overview':  html=ScOverview(); break;
+    case 'teamsheet': html=ScTeamSheet(); break;
+    case 'live':      html=ScLive(); break;
+    case 'post':      html=ScPost(); break;
+  }
+  const scr=$('screen');
+  const prevScrollEl = scr.querySelector('.scroll');
+  const prevScroll = prevScrollEl ? prevScrollEl.scrollTop : 0;
+  scr.innerHTML = html;
+  const nextScrollEl = scr.querySelector('.scroll');
+  if(nextScrollEl) nextScrollEl.scrollTop = prevScroll;
+}
+
+/* ============================================================
+   GOAL 1 — ACCESS THE APPLICATION (shared with TR)
+   US-AA-01 login, US-AA-08 dashboard
+   ============================================================ */
+function ScLogin(){
+  const e=state.loginErr;
+  return `
+  <div class="scroll" style="background:#fff;">
+    <div style="height:64px"></div>
+    <div style="text-align:center;padding:0 28px;">
+      <div style="width:76px;height:76px;border-radius:22px;background:var(--rbfa-red);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:var(--shadow-2);">${I.shield}</div>
+      <h1 style="font-size:23px;margin:0 0 4px;">RBFA Match Sheet</h1>
+      <p style="color:var(--on-surface-var);margin:0 0 6px;">Digital match sheet</p>
+      <span class="badge red">${I.whistle.replace('#5f6368','currentColor')} Role: Referee</span>
+    </div>
+    <div class="pad" style="padding:28px 24px 16px;">
+      ${e?`<div class="banner err">${I.warn}<div>${e}</div></div>`:''}
+      <div class="field" id="fEmail">
+        <label>Email address</label>
+        <div style="position:relative;"><span style="position:absolute;left:12px;top:16px;">${I.mail}</span>
+        <input id="email" type="email" style="padding-left:42px;" value="${state.loginEmail}" autocomplete="username"/></div>
+        <div class="hint err" id="emailHint" style="display:none;">Enter a valid email address.</div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div style="position:relative;"><span style="position:absolute;left:12px;top:16px;">${I.key}</span>
+        <input id="pw" type="password" style="padding-left:42px;" value="${state.loginPw}" autocomplete="current-password"/></div>
+      </div>
+      <div style="text-align:right;margin:-6px 0 16px;"><a class="link" onclick="snack('Password reset is demonstrated in the Team Responsible prototype.')">Forgot password?</a></div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign in as referee</button>
+      <p style="text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:22px;line-height:1.6;">
+        Demo login works with the pre‑filled credentials.<br/>
+        You are <b>Mr. P. Janssen</b>, referee of today's match.
+      </p>
+    </div>
+  </div>`;
+}
+function doLogin(){
+  const email=$('email').value.trim(), pw=$('pw').value;
+  state.loginEmail=email; state.loginPw=pw; state.loginErr='';
+  const valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if(!valid){ $('emailHint').style.display='block'; $('fEmail').classList.add('error'); return; }   // US-AA-01 inline validation
+  if(!pw || pw.length<3){ state.loginErr='Incorrect email address or password.'; render(); return; } // US-AA-01 generic error
+  state.user={email, name:'Mr. P. Janssen'}; go('dashboard');                                        // US-AA-08 land on dashboard
+}
+
+/* ============================================================
+   DASHBOARD — assigned matches (US-AA-08)
+   ============================================================ */
+function ScDashboard(){
+  const next = MATCHES.filter(m=>matchListStatus(m)!=='SUBMITTED');
+  const prev = MATCHES.filter(m=>matchListStatus(m)==='SUBMITTED');
+  const list = state.dashTab==='next'?next:prev;
+  return `
+  <div class="appbar">
+    <span class="title" style="padding-left:8px;">My matches</span>
+    <button class="iconbtn" onclick="openMenu()">${I.menu}</button>
+  </div>
+  <div class="segmented">
+    <button class="${state.dashTab==='next'?'active':''}" onclick="state.dashTab='next';render()">Upcoming</button>
+    <button class="${state.dashTab==='prev'?'active':''}" onclick="state.dashTab='prev';render()">Previous</button>
+  </div>
+  <div class="scroll pad">
+    <div class="banner info">${I.whistle.replace('#5f6368','currentColor')}<div>Signed in as <b>referee</b>. Matches you are assigned to, sorted by date.</div></div>
+    <div class="searchbar">${I.search}
+      <input id="dashSearch" placeholder="Search by team or stadium" value="${state.dashSearch}" oninput="onDashSearch(this.value)"/>
+      ${state.dashSearch?`<span onclick="onDashSearch('')" style="cursor:pointer;">${I.close}</span>`:''}
+    </div>
+    <div class="filterrow">
+      <span class="filter-chip ${state.dashDateFilter?'active':''}" onclick="openDateFilterSheet()">
+        ${I.cal.replace('#5f6368','currentColor')}<span class="lbl">${state.dashDateFilter?fmtDateShort(state.dashDateFilter):'Date'}</span>
+        ${state.dashDateFilter?`<span class="x" onclick="event.stopPropagation();clearDateFilter()">${I.close.replace('width="20" height="20"','width="14" height="14"')}</span>`:I.caret}
+      </span>
+      <span class="filter-chip ${state.dashCompFilters.length?'active':''}" onclick="openCompFilterSheet()">
+        ${I.cup.replace('#5f6368','currentColor')}<span class="lbl">${compFilterLabel()}</span>
+        ${state.dashCompFilters.length?`<span class="x" onclick="event.stopPropagation();clearCompFilter()">${I.close.replace('width="20" height="20"','width="14" height="14"')}</span>`:I.caret}
+      </span>
+    </div>
+    <div id="matchList">${MatchList(list, state.dashTab)}</div>
+  </div>`;
+}
+function matchListStatus(m){
+  if(m.id==='m1') return state.matchStatus==='ENDED' && state.sheet.home==='SUBMITTED' ? 'SUBMITTED' : state.matchStatus;
+  return m.staticStatus;
+}
+function fmtDateShort(iso){
+  const d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+function onDashSearch(v){
+  state.dashSearch=v;
+  const next = MATCHES.filter(m=>matchListStatus(m)!=='SUBMITTED');
+  const prev = MATCHES.filter(m=>matchListStatus(m)==='SUBMITTED');
+  $('matchList').innerHTML=MatchList(state.dashTab==='next'?next:prev, state.dashTab);
+}
+function MatchList(list, tab){
+  // apply search + filters
+  let r=list.filter(m=>{
+    const s=state.dashSearch.toLowerCase().trim();
+    const matchS = !s || m.away.toLowerCase().includes(s) || m.home.toLowerCase().includes(s)
+       || m.venue.toLowerCase().includes(s);
+    const matchDate = !state.dashDateFilter || m.date===state.dashDateFilter;
+    const matchComp = !state.dashCompFilters.length || state.dashCompFilters.includes(m.competition);
+    return matchS && matchDate && matchComp;
+  });
+  if(!r.length) return `<div class="empty">${I.search}<p>No matches found.<br/>Adjust your search term or filters.</p></div>`;
+  r=r.slice().sort((a,b)=> tab==='next' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
+  const hero=r[0], rest=r.slice(1);
+  let html = `<div class="section-title" style="margin-top:2px;">${tab==='next'?'Next match':'Most recent match'}</div>` + MatchCard(hero);
+  if(rest.length){
+    html += `<div class="section-title">${tab==='next'?'Also coming up':'Earlier matches'}</div>`;
+    html += `<div class="card">${rest.map(m=>CompactRow(m)).join('')}</div>`;
+  }
+  return html;
+}
+
+/* ---------- Date filter (calendar picker) ---------- */
+function openDateFilterSheet(){
+  state.calMonth = activeMatch().date.slice(0,7);
+  const ov=document.createElement('div'); ov.className='overlay'; ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="sheet" id="dateSheet"><div class="grip"></div>${DatePickerSheetBody()}</div>`;
+  $('phone').appendChild(ov);
+}
+function DatePickerSheetBody(){
+  const [y,mo]=state.calMonth.split('-').map(Number);
+  const first=new Date(y,mo-1,1);
+  const startDow=(first.getDay()+6)%7; // Monday-first grid
+  const daysInMonth=new Date(y,mo,0).getDate();
+  const monthLabel=first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const todayIso=activeMatch().date;
+  const tabMatches = state.dashTab==='next' ? MATCHES.filter(m=>matchListStatus(m)!=='SUBMITTED') : MATCHES.filter(m=>matchListStatus(m)==='SUBMITTED');
+  const matchDates=new Set(tabMatches.map(m=>m.date));
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<span></span>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const iso=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls=['cal-day'];
+    if(iso===todayIso) cls.push('today');
+    if(iso===state.dashDateFilter) cls.push('selected');
+    if(matchDates.has(iso)) cls.push('has-match');
+    cells+=`<button class="${cls.join(' ')}" onclick="selectFilterDate('${iso}')">${d}</button>`;
+  }
+  return `
+    <h3>Filter by date</h3>
+    <p style="color:var(--on-surface-var);font-size:13px;margin:0 0 16px;">Pick a match day. Days with a ${state.dashTab==='next'?'scheduled':'previous'} match are marked with a dot.</p>
+    <div class="cal-head">
+      <button class="cal-navbtn" onclick="navCalMonth(-1)">${I.chevL}</button>
+      <span class="lbl">${monthLabel}</span>
+      <button class="cal-navbtn" onclick="navCalMonth(1)">${I.chevR}</button>
+    </div>
+    <div class="cal-grid">
+      <span class="cal-dow">Mo</span><span class="cal-dow">Tu</span><span class="cal-dow">We</span>
+      <span class="cal-dow">Th</span><span class="cal-dow">Fr</span><span class="cal-dow">Sa</span><span class="cal-dow">Su</span>
+      ${cells}
+    </div>
+    ${state.dashDateFilter?`<button class="btn btn-text" style="width:100%;margin-top:14px;" onclick="clearDateFilter();this.closest('.overlay').remove()">Clear date filter</button>`:''}
+  `;
+}
+function navCalMonth(delta){
+  let [y,mo]=state.calMonth.split('-').map(Number);
+  mo+=delta;
+  if(mo<1){mo=12;y--;} if(mo>12){mo=1;y++;}
+  state.calMonth=`${y}-${String(mo).padStart(2,'0')}`;
+  $('dateSheet').innerHTML=`<div class="grip"></div>${DatePickerSheetBody()}`;
+}
+function selectFilterDate(iso){
+  state.dashDateFilter = (state.dashDateFilter===iso) ? null : iso;
+  document.querySelector('.overlay')?.remove();
+  render();
+}
+function clearDateFilter(){ state.dashDateFilter=null; document.querySelector('.overlay')?.remove(); render(); }
+
+/* ---------- Competition filter (multi-select list picker) ---------- */
+function compFilterLabel(){
+  const n=state.dashCompFilters.length;
+  if(n===0) return 'Competition';
+  if(n===1) return state.dashCompFilters[0];
+  return n+' competitions';
+}
+function openCompFilterSheet(){
+  document.querySelector('.overlay')?.remove();
+  const ov=document.createElement('div'); ov.className='overlay'; ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div class="sheet" id="compSheet"><div class="grip"></div>${CompFilterSheetBody()}</div>`;
+  $('phone').appendChild(ov);
+}
+function CompFilterSheetBody(){
+  const comps=[...new Set(MATCHES.map(m=>m.competition))];
+  const row=(name)=>{
+    const on=state.dashCompFilters.includes(name);
+    return `
+    <div class="menu-item" onclick="toggleCompFilter('${name.replace(/'/g,"\\'")}')">
+      <span class="check ${on?'on':''}">${on?I.check:''}</span>
+      <div>${name}</div>
+    </div>`;
+  };
+  return `
+    <h3>Filter by competition</h3>
+    <p style="color:var(--on-surface-var);font-size:13px;margin:0 0 6px;">Select one or more competitions.</p>
+    <div style="margin:10px 0 4px;">
+      ${comps.map(c=>row(c)).join('')}
+    </div>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="document.querySelector('.overlay')?.remove();render()">Apply</button>
+    ${state.dashCompFilters.length?`<button class="btn btn-text" style="width:100%;margin-top:6px;" onclick="clearCompFilter()">Clear selection</button>`:''}
+  `;
+}
+function toggleCompFilter(name){
+  const i=state.dashCompFilters.indexOf(name);
+  if(i===-1) state.dashCompFilters.push(name); else state.dashCompFilters.splice(i,1);
+  const sheet=$('compSheet');
+  if(sheet) sheet.innerHTML=`<div class="grip"></div>${CompFilterSheetBody()}`;
+}
+function clearCompFilter(){ state.dashCompFilters=[]; document.querySelector('.overlay')?.remove(); render(); }
+
+const DOT_COLOR={grey:'#9aa0a6',green:'var(--green)',amber:'var(--amber)',red:'var(--rbfa-red-dark)',blue:'var(--blue)'};
+function CompactRow(m){
+  const st=matchListStatus(m); const d=MATCH_STATUS[st]||SHEET_STATUS[st]||{label:st,badge:'grey'};
+  return `
+  <div class="row" onclick="openMatch('${m.id}')">
+    <div class="crest" style="width:34px;height:34px;flex:0 0 34px;font-size:11px;margin:0;background:#5f6368">${initials(m.home)}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:baseline;gap:6px;">
+        <span style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">${m.home} – ${m.away}</span>
+        ${m.score?'<span style="font-weight:700;font-size:13.5px;flex:0 0 auto;">'+m.score+'</span>':''}
+      </div>
+      <div class="psub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.dateLabel} · ${m.kickoff} · ${m.competition}</div>
+    </div>
+    <div style="flex:0 0 auto;display:flex;align-items:center;gap:6px;max-width:96px;">
+      <span style="width:8px;height:8px;border-radius:50%;flex:0 0 8px;background:${DOT_COLOR[d.badge]};"></span>
+      <span style="font-size:11.5px;color:var(--on-surface-var);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${d.label}">${d.label}</span>
+      <span style="color:#9aa0a6;font-size:18px;flex:0 0 auto;">›</span>
+    </div>
+  </div>`;
+}
+function MatchCard(m){
+  const st=matchListStatus(m); const d=MATCH_STATUS[st]||SHEET_STATUS[st]||{label:st,badge:'grey'};
+  let cta='Open match';
+  if(m.id==='m1'){
+    if(state.matchStatus==='SCHEDULED'||state.matchStatus==='READY') cta='Validate teams';
+    else if(state.matchStatus==='IN_PROGRESS'||state.matchStatus==='HALF_TIME') cta='Go to live match';
+    else cta = state.sheet.home==='SUBMITTED' ? 'View match sheet' : 'Finalise match sheet';
+  }
+  return `
+  <div class="card clickable" onclick="openMatch('${m.id}')">
+    <div class="pad" style="padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--on-surface-var);">${m.competition} · ${m.round}</span>
+        <span style="font-size:12px;color:var(--on-surface-var);display:flex;align-items:center;gap:4px;">${I.cal}${m.dateLabel} · ${m.kickoff}</span>
+      </div>
+      <div class="vs">
+        <div class="team"><div class="crest" style="background:var(--rbfa-red)">${initials(m.home)}</div><div style="font-weight:600;font-size:13.5px;">${m.home}</div></div>
+        <div class="mid">${m.score?('<div style="font-size:22px;color:#1f1f1f;font-weight:700;">'+m.score+'</div>'):'VS'}</div>
+        <div class="team"><div class="crest" style="background:#5f6368">${initials(m.away)}</div><div style="font-weight:600;font-size:13.5px;">${m.away}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;justify-content:center;margin-top:10px;font-size:12px;color:var(--on-surface-var);">${I.pin}${m.venue}</div>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;">
+      <span class="badge ${d.badge}">${d.label}</span>
+      <span style="color:var(--rbfa-red);font-weight:600;font-size:13.5px;">${cta} ›</span>
+    </div>
+  </div>`;
+}
+function openMatch(id){
+  if(id!=='m1'){ snack("Demo: only today's match (Royal Antwerp FC – KV Mechelen) is interactive."); return; }
+  state.activeMatchId=id;
+  routeMatch();
+}
+function routeMatch(){
+  if(state.matchStatus==='IN_PROGRESS'||state.matchStatus==='HALF_TIME') go('live');
+  else if(state.matchStatus==='ENDED') go('post');
+  else go('overview');
+}
+
+/* ---------- Menu (logout US-AA-04, demo helpers) ---------- */
+function openMenu(){
+  openSheet(`
+    <div style="display:flex;align-items:center;gap:12px;padding:4px 6px 14px;border-bottom:1px solid var(--outline-soft);margin-bottom:8px;">
+      <div style="width:42px;height:42px;border-radius:50%;background:var(--rbfa-red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;">PJ</div>
+      <div><div style="font-weight:600;">${state.user?state.user.name:'Referee'}</div><div style="font-size:12.5px;color:var(--on-surface-var);">${state.user?state.user.email:''}</div></div>
+    </div>
+    <div class="menu-item" onclick="closeSheet();resetDemo()">${I.trash.replace('width="18" height="18"','width="22" height="22"')}<div>Reset demo<div style="font-size:12px;color:var(--on-surface-var)">Clear validation, events & result — start over</div></div></div>
+    <div class="menu-item" onclick="closeSheet();logout()">${I.logout}<div>Sign out</div></div>`);
+}
+function resetDemo(){
+  state.matchStatus='SCHEDULED';
+  state.sheet={home:'PENDING_REVIEW',away:'PENDING_REVIEW'};
+  state.correction={home:null,away:null};
+  state.kickoffActual=null; state.half=1; state.liveMinute=1; state.addedTime={first:null,second:null};
+  state.events=[]; state.seq=1; state.nowMin=885;
+  state.remark=''; state.submittedFedAt=null;
+  state.dashTab='next'; state.teamTab='home'; state.liveTab='timeline';
+  state.dashSearch=''; state.dashDateFilter=null; state.dashCompFilters=[]; state.calMonth=null;
+  go('dashboard');
+  snack('Demo reset — back to the referee arriving at the venue.');
+}
+function logout(){ state.user=null; state.screen='login'; render(); snack('You have been signed out.'); }
+
+/* ============================================================
+   GOAL 3 — VALIDATE AND START MATCH
+   Pre-match overview: both teams' submission + validation status,
+   start control. (US-VS-04/06/09/10)
+   ============================================================ */
+function ScOverview(){
+  const m=activeMatch();
+  const bothValidated = state.sheet.home==='VALIDATED' && state.sheet.away==='VALIDATED';
+  return `
+  <div class="appbar"><button class="iconbtn" onclick="go('dashboard')">${I.back}</button>
+    <span class="title">Match validation</span>
+    <button class="demo-chip" onclick="cycleClock()">${I.clock} ${fmtTime(state.nowMin)}</button>
+  </div>
+  <div class="scroll" style="padding-bottom:16px;">
+    <!-- Match overview (assignment §1.4.1) -->
+    <div style="background:#fff;padding:16px;box-shadow:var(--shadow-1);">
+      <div style="text-align:center;font-size:12px;color:var(--on-surface-var);margin-bottom:10px;">${m.competition} · ${m.round}</div>
+      <div class="vs" style="margin-bottom:6px;">
+        <div class="team"><div class="crest" style="background:var(--rbfa-red)">${initials(m.home)}</div><div style="font-weight:600;font-size:14px;">${m.home}</div><div style="font-size:11px;color:var(--on-surface-var)">Home</div></div>
+        <div class="mid">VS</div>
+        <div class="team"><div class="crest" style="background:#5f6368">${initials(m.away)}</div><div style="font-weight:600;font-size:14px;">${m.away}</div><div style="font-size:11px;color:var(--on-surface-var)">Away</div></div>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;">
+        <span style="font-size:11px;color:var(--on-surface-var);align-self:center;">Match status:</span>${matchBadge(state.matchStatus)}
+      </div>
+    </div>
+
+    <div class="pad">
+      <div class="card"><div class="pad" style="padding:6px 16px;">
+        <div class="meta">${I.cal}<div><div class="mlabel">Date & kickoff (scheduled)</div><div class="mval">${m.dateLabel} · ${m.kickoff}</div></div></div>
+        <div class="meta">${I.pin}<div><div class="mlabel">Venue</div><div class="mval">${m.venue}</div></div></div>
+        <div class="meta">${I.whistle}<div><div class="mlabel">Match officials</div><div class="mval">${m.referees.join('<br/>')}</div></div></div>
+      </div></div>
+
+      <div class="section-title">Team match sheets</div>
+      <div class="banner info" style="margin-bottom:12px;">${I.info}<div>Review each team's submitted sheet, then validate it against the competition regulations. The match can only start once <b>both</b> teams are validated.</div></div>
+
+      ${TeamStatusCard('home')}
+      ${TeamStatusCard('away')}
+
+      <div class="card"><div class="vstat">
+        <div class="vicon" style="background:${bothValidated?'var(--green-bg)':'#f1f3f4'};color:${bothValidated?'var(--green)':'#9aa0a6'};">${bothValidated?I.checkc:I.players}</div>
+        <div style="flex:1;">
+          <div class="vt">Both teams cleared</div>
+          <div class="vs2">${bothValidated?'Home and away validated — ready for kick-off.':'Validate the remaining team to enable kick-off.'}</div>
+        </div>
+        ${bothValidated?'<span class="badge green">'+I.check+' Ready</span>':'<span class="badge grey">Pending</span>'}
+      </div></div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-green" ${bothValidated?'':'disabled'} onclick="confirmStartMatch()">${I.play} Start match</button>
+    ${bothValidated?'':'<div style="text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:8px;">'+startBlockMsg()+'</div>'}
+  </div>`;
+}
+function startBlockMsg(){
+  const pend=[];
+  if(state.sheet.home!=='VALIDATED') pend.push(HOME.name);
+  if(state.sheet.away!=='VALIDATED') pend.push(AWAY.name);
+  return 'Still to validate: '+pend.join(' & ')+'.';   // US-VS-06
+}
+function TeamStatusCard(key){
+  const t=team(key), st=state.sheet[key];
+  const d=SHEET_STATUS[st];
+  const validated = st==='VALIDATED';
+  const late=isLate(key);
+  const cnt = t.players.length, starters=t.players.filter(p=>p.role==='starter').length;
+  return `
+  <div class="card clickable" onclick="openTeamSheet('${key}')">
+    <div class="vstat">
+      <div class="vicon" style="background:${key==='home'?'var(--rbfa-red)':'#5f6368'};color:#fff;">${initials(t.name)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="vt">${t.name} <span style="font-size:11px;color:var(--on-surface-var);font-weight:500;">· ${t.side}</span></div>
+        <div class="vs2">${starters} starters · ${cnt-starters} subs · ${st==='NEEDS_REVISION'?'correction requested':'submitted '+t.submittedAt}</div>
+      </div>
+      <span class="badge ${d.badge}">${d.label}</span>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 16px;">
+      <span style="font-size:12px;color:${late?'var(--amber)':'var(--green)'};display:flex;align-items:center;gap:5px;">
+        ${late?I.warn.replace('width="20" height="20"','width="15" height="15"'):I.check.replace('fill="#fff"','fill="#1e8e3e"')}
+        ${late?'Late submission ('+t.submittedAt+', < 20 min)':'On time ('+t.submittedAt+')'}
+      </span>
+      <span style="color:var(--rbfa-red);font-weight:600;font-size:13px;">${validated?'View sheet':'Review & validate'} ›</span>
+    </div>
+  </div>`;
+}
+function openTeamSheet(key){ state.teamTab=key; go('teamsheet'); }
+
+function cycleClock(){
+  // demo: toggle wall clock around kickoff to illustrate timing
+  state.nowMin = state.nowMin>=900 ? 885 : 905;
+  snack('Demo clock: '+fmtTime(state.nowMin)+(state.nowMin>=900?' — past scheduled kickoff':' — before kickoff'));
+  render();
+}
+
+/* ============================================================
+   TEAM SHEET REVIEW — home/away tabs (US-VS-01/02/03/05/07)
+   ============================================================ */
+function ScTeamSheet(){
+  const key=state.teamTab, t=team(key), st=state.sheet[key];
+  const validated=st==='VALIDATED';
+  const checks=validationChecks(key);
+  const allOk=checks.every(c=>c.ok);
+  return `
+  <div class="appbar"><button class="iconbtn" onclick="go('overview')">${I.back}</button>
+    <span class="title">Match sheet review</span>
+  </div>
+  <div class="segmented">
+    <button class="${key==='home'?'active':''}" onclick="state.teamTab='home';render()">Home · ${HOME.short} ${badgeDot('home')}</button>
+    <button class="${key==='away'?'active':''}" onclick="state.teamTab='away';render()">Away · ${AWAY.short} ${badgeDot('away')}</button>
+  </div>
+  <div class="scroll pad">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 2px 12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="crest" style="width:38px;height:38px;font-size:13px;margin:0;background:${key==='home'?'var(--rbfa-red)':'#5f6368'}">${initials(t.name)}</div>
+        <div><div style="font-weight:700;">${t.name}</div><div style="font-size:12px;color:var(--on-surface-var);">${t.side} team</div></div>
+      </div>
+      ${sheetBadge(st)}
+    </div>
+
+    ${st==='NEEDS_REVISION'?`<div class="banner err">${I.warn}<div><b>Correction requested.</b> ${state.correction[key]}<br/><a class="link" onclick="simulateResubmit('${key}')">Demo: TR resubmits corrected sheet ›</a></div></div>`:''}
+
+    <div class="banner ${isLate(key)?'warn':'ok'}">${isLate(key)?I.warn:I.checkc}<div>${isLate(key)
+        ? '<b>Late submission.</b> Submitted at '+t.submittedAt+', less than 20 min before kickoff ('+activeMatch().kickoff+'). Informational only — you can still validate and start.'
+        : '<b>Submitted on time.</b> Received at '+t.submittedAt+', more than 20 min before kickoff ('+activeMatch().kickoff+').'}</div></div>
+
+    <!-- Starting line-up (US-VS-01) with eligibility indicators (US-VS-03) -->
+    <div class="section-title" style="margin-top:6px;">Starting line-up · ${t.players.filter(p=>p.role==='starter').length}</div>
+    <div class="card">${t.players.filter(p=>p.role==='starter').sort((a,b)=>a.nr-b.nr).map(p=>playerReviewRow(p)).join('')}</div>
+
+    <div class="section-title">Substitutes · ${t.players.filter(p=>p.role==='sub').length}</div>
+    <div class="card">${t.players.filter(p=>p.role==='sub').sort((a,b)=>a.nr-b.nr).map(p=>playerReviewRow(p)).join('')}</div>
+
+    <!-- Team officials (US-VS-01) -->
+    <div class="section-title">Team officials · ${t.officials.length}</div>
+    <div class="card">${t.officials.map(o=>`
+      <div class="row static">
+        <div class="num" style="background:#fff;">${I.staff.replace('width="22" height="22"','width="18" height="18"').replace('fill="currentColor"','fill="#5f6368"')}</div>
+        <div style="flex:1;"><div class="pname">${o.name}</div><div class="psub">${o.role}</div></div>
+        ${o.delegate?'<span class="badge amber">Delegate</span>':''}
+      </div>`).join('')}</div>
+
+    <!-- Validation result (US-VS-05) -->
+    <div class="section-title">Regulation checks</div>
+    <div class="card"><div class="pad">
+      ${checks.map(c=>`<div class="req ${c.ok?'met':'fail'}">${c.ok?I.check.replace('fill="#fff"','fill="#1e8e3e"'):I.warn.replace('width="20" height="20"','width="16" height="16"')}<div>${c.label}</div></div>`).join('')}
+    </div></div>
+    <div style="height:8px"></div>
+  </div>
+  <div class="bottom-bar">
+    ${validated
+      ? `<div class="banner ok" style="margin:0;">${I.checkc}<div><b>${t.name} validated.</b> This team is cleared to play.</div></div>`
+      : `<button class="btn btn-green" ${allOk?'':'disabled'} onclick="validateTeam('${key}')">${I.check.replace('fill="#fff"','fill="#fff"')} Validate ${t.short}</button>
+         <button class="btn btn-text" style="width:100%;margin-top:6px;" onclick="openCorrectionSheet('${key}')">Request a correction from the team</button>`}
+  </div>`;
+}
+function badgeDot(key){
+  const d=SHEET_STATUS[state.sheet[key]];
+  return `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${DOT_COLOR[d.badge]};vertical-align:middle;margin-left:2px;"></span>`;
+}
+function playerReviewRow(p){
+  const cap = p.captain;
+  return `
+  <div class="row ${p.warn?'':'static'}" ${p.warn?`onclick="showEligibility('${p.pid}')"`:''}>
+    <div class="num">${p.nr}</div>
+    <div style="flex:1;">
+      <div class="pname">${p.name}${cap?' <span class="badge amber" style="margin-left:4px;">C</span>':''}${p.warn?'<span class="ywarn" title="Eligibility advisory"></span>':''}</div>
+      ${(p.pos==='Goalkeeper'||p.warn)?`<div class="psub">${p.pos==='Goalkeeper'?p.pos:''}${p.pos==='Goalkeeper'&&p.warn?' · ':''}${p.warn?'<span style="color:var(--amber)">tap for details</span>':''}</div>`:''}
+    </div>
+  </div>`;
+}
+function showEligibility(pid){  // US-VS-03 — tap warning for the reason
+  const p=pById(pid);
+  openSheet(`
+    <h3>Eligibility advisory</h3>
+    <div style="display:flex;align-items:center;gap:10px;margin:10px 0 14px;">
+      <div class="num">${p.nr}</div><div><b>${p.name}</b><div style="font-size:12.5px;color:var(--on-surface-var);">${p.pos==='Goalkeeper'?p.pos+' · ':''}${teamOf(pid)==='home'?HOME.name:AWAY.name}</div></div>
+    </div>
+    <div class="banner warn" style="margin:0 0 14px;">${I.warn}<div>${p.warn}</div></div>
+    <p style="font-size:13px;color:var(--on-surface-var);margin:0 0 14px;line-height:1.5;">This is a <b>non-blocking advisory</b>. The player is eligible for today's match; it is shown so you are aware ahead of any further caution.</p>
+    <button class="btn btn-primary" onclick="closeSheet()">Got it</button>`);
+}
+function validationChecks(key){   // US-VS-05 — regulation checks
+  const t=team(key);
+  const starters=t.players.filter(p=>p.role==='starter').length;
+  const ineligible=t.players.filter(p=>p.eligible===false).length;
+  return [
+    {label:'At least 11 eligible starting players ('+starters+' listed)', ok:starters>=RULES.starters && ineligible===0},
+    {label:'A captain is designated', ok:!!captainOf(key)},
+    {label:'A team delegate is present among the officials', ok:!!delegateOf(key)},
+    {label:'Squad within regulation size ('+t.players.length+' players)', ok:t.players.length<=23},
+  ];
+}
+function validateTeam(key){   // US-VS-05
+  state.sheet[key]='VALIDATED';
+  state.correction[key]=null;
+  if(state.sheet.home==='VALIDATED' && state.sheet.away==='VALIDATED') state.matchStatus='READY';  // §1 lifecycle
+  const otherKey=other(key);
+  if(state.sheet[otherKey]!=='VALIDATED'){
+    snack(team(key).name+' validated. Now review '+team(otherKey).name+'.', 'Switch', ()=>{state.teamTab=otherKey;render();});
+  } else {
+    snack('Both teams validated — ready for kick-off.');
+  }
+  render();
+}
+function openCorrectionSheet(key){   // US-VS-07
+  const t=team(key);
+  state.form={issue:''};
+  openSheet(correctionBody(key));
+}
+function correctionBody(key){
+  const t=team(key);
+  return `
+    <h3>Request a correction</h3>
+    <p style="color:var(--on-surface-var);font-size:13px;margin:0 0 14px;line-height:1.5;">Describe the issue on ${t.name}'s match sheet. The Team Responsible is notified and can correct and resubmit before kick-off.</p>
+    <div class="field"><label>Issue for the team to resolve</label>
+      <textarea id="corrTxt" placeholder="e.g. Player #9 is listed twice / captain not designated / ..." oninput="state.form.issue=this.value">${state.form.issue||''}</textarea></div>
+    <button class="btn btn-primary" onclick="sendCorrection('${key}')">${I.send} Send correction request</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`;
+}
+function sendCorrection(key){
+  const txt=(state.form.issue||'').trim();
+  if(!txt){ snack('Describe the issue first.'); return; }
+  state.sheet[key]='NEEDS_REVISION';
+  state.correction[key]=txt;
+  if(state.matchStatus==='READY') state.matchStatus='SCHEDULED';
+  closeSheet(); render();
+  snack('Correction request sent to '+team(key).name+'.');
+}
+function simulateResubmit(key){   // demo affordance for US-VS-07 resubmission loop
+  state.sheet[key]='PENDING_REVIEW';
+  state.correction[key]=null;
+  render();
+  snack(team(key).name+' resubmitted a corrected sheet. You can re-validate.');
+}
+
+/* ---------- Start match (US-VS-09/10) ---------- */
+function confirmStartMatch(){
+  const m=activeMatch();
+  const late = state.nowMin>m.kickoffMin;
+  openSheet(`
+    <h3>Start the match?</h3>
+    <p style="color:var(--on-surface-var);line-height:1.5;margin:0 0 14px;">Both teams are validated. Starting the match sets the status to <b>In progress</b> and records the official kick-off time. Event registration becomes available.</p>
+    <div class="banner ${late?'warn':'ok'}" style="margin-bottom:14px;">${late?I.warn:I.check}<div>Kick-off time will be recorded as <b>${fmtTime(state.nowMin)}</b>${late?' — after the scheduled '+m.kickoff+'.':' (scheduled '+m.kickoff+').'}</div></div>
+    <button class="btn btn-green" onclick="startMatch()">${I.play} Start match now</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`);
+}
+function startMatch(){
+  closeSheet();
+  state.matchStatus='IN_PROGRESS';   // §1 lifecycle
+  state.kickoffActual=fmtTime(state.nowMin);   // US-VS-10
+  state.half=1; state.liveMinute=1;
+  go('live');
+  snack('Match started — kick-off recorded at '+state.kickoffActual+'.');
+}
+
+/* ============================================================
+   GOAL 4 — MANAGE MATCH IN PROGRESS
+   Live hub: scoreboard + actions + timeline/line-ups (US-MI-08)
+   ============================================================ */
+function ScLive(){
+  const m=activeMatch();
+  const ht = state.matchStatus==='HALF_TIME';
+  const inPlay = state.matchStatus==='IN_PROGRESS';
+  const canRegister = inPlay||ht;   // half-time corrections are allowed too — only the minute needs adjusting
+  return `
+  <div class="appbar"><button class="iconbtn" onclick="go('dashboard')">${I.back}</button>
+    <span class="title">Live match</span>
+    <button class="iconbtn" onclick="openLiveMenu()">${I.menu}</button>
+  </div>
+  ${Scoreboard()}
+  <div class="qa-row">
+    <button class="qa tonal" ${canRegister?'':'disabled'} onclick="openEventPicker()">${I.plus} Add event</button>
+    <button class="qa tonal" ${canRegister?'':'disabled'} onclick="openSubForm()">${I.swap} Substitution</button>
+  </div>
+  ${ht?`<div class="pad" style="padding:10px 16px 0;"><div class="banner amber" style="margin:0;background:var(--amber-bg);color:var(--amber);">${I.flag}<div><b>Half-time.</b> The clock is paused — set the minute on each form when registering an event or substitution.</div></div></div>`:''}
+  <div class="segmented" style="margin-top:12px;">
+    <button class="${state.liveTab==='timeline'?'active':''}" onclick="state.liveTab='timeline';render()">Timeline</button>
+    <button class="${state.liveTab==='lineups'?'active':''}" onclick="state.liveTab='lineups';render()">Line-ups</button>
+  </div>
+  <div class="scroll">
+    ${state.liveTab==='timeline'?TimelineView(true):LineupsView()}
+    <div style="height:10px"></div>
+  </div>
+  <div class="bottom-bar">${liveBottom()}</div>`;
+}
+function Scoreboard(){
+  const m=activeMatch();
+  const ht=state.matchStatus==='HALF_TIME';
+  const phase = ht?'Half-time' : (state.half===1?'1st half':'2nd half');
+  return `
+  <div class="scoreboard">
+    <div class="sbtop">
+      <div class="sb-team"><div class="crest" style="background:var(--rbfa-red)">${initials(HOME.name)}</div><div class="nm">${HOME.short}</div></div>
+      <div class="sb-score">${state.score.home} : ${state.score.away}</div>
+      <div class="sb-team"><div class="crest" style="background:#5f6368">${initials(AWAY.name)}</div><div class="nm">${AWAY.short}</div></div>
+    </div>
+    <div class="sb-clock">
+      ${ht?'':`<button class="sb-stepbtn" onclick="bumpMinute(-1)">−</button>`}
+      <span class="sb-min">${ht?'HT':state.liveMinute+"'"}</span>
+      ${ht?'':`<button class="sb-stepbtn" onclick="bumpMinute(1)">+</button>`}
+    </div>
+    <div style="text-align:center;margin-top:8px;display:flex;align-items:center;gap:7px;justify-content:center;font-size:12px;color:#cfd2d6;">
+      ${ht?'':'<span class="livedot"></span>'} ${phase} · kick-off ${state.kickoffActual||activeMatch().kickoff}
+    </div>
+  </div>`;
+}
+function bumpMinute(d){ state.liveMinute=Math.max(1,state.liveMinute+d); render(); }
+// Default minute proposed when opening a goal/card/substitution form. While
+// the match is actually running this follows the ticking live clock; during
+// half-time the clock is paused so it proposes the end of the first half
+// (45'), and once the match has ended it proposes the end of the second
+// half (90') — both still correctable via the minute stepper (US-MI-01/03).
+function defaultEventMinute(){
+  if(state.matchStatus==='HALF_TIME') return 45;
+  if(state.matchStatus==='ENDED') return 90;
+  return state.liveMinute;
+}
+
+function liveBottom(){
+  if(state.matchStatus==='HALF_TIME')
+    return `<button class="btn btn-green" onclick="confirmSecondHalf()">${I.play} Start second half</button>`;
+  if(state.half===1)
+    return `<button class="btn btn-dark" onclick="confirmEndHalf('first')">${I.flag} End first half</button>`;
+  return `<button class="btn btn-primary" onclick="confirmEndHalf('match')">${I.stop} End match</button>`;
+}
+
+/* ---------- Live overview: timeline (US-MI-08) ---------- */
+function TimelineView(allowDelete){
+  const rows=timelineRows(allowDelete);
+  if(!rows) return `<div class="empty">${I.ball}<p>No events yet.<br/>Use “Add event” or “Substitution”.</p></div>`;
+  return `<div style="background:#fff;">${rows}</div>`;
+}
+function timelineRows(allowDelete){
+  const evs=state.events.slice().sort((a,b)=> (a.minute-b.minute) || (a.seq-b.seq));
+  if(!evs.length) return '';
+  const yc={}; let out='';
+  evs.forEach(ev=>{
+    out+=EvtRow(ev, allowDelete);
+    if(ev.type==='yellow'){ yc[ev.pid]=(yc[ev.pid]||0)+1; if(yc[ev.pid]===2) out+=YellowRedRow(ev); }
+  });
+  return out;
+}
+function EvtRow(ev, allowDelete){
+  const p = ev.pid?pById(ev.pid):null;
+  let ico, title, sub, sideName;
+  if(ev.type==='goal'){
+    const scorer=pById(ev.scorerPid);
+    sideName = (ev.creditedTeam==='home'?HOME.short:AWAY.short);
+    ico=`<div class="eico" style="background:var(--green-bg);">${I.ball.replace('width="20" height="20"','width="18" height="18"').replace('fill="currentColor"','fill="#1e8e3e"')}</div>`;
+    title=`${scorer.name} <span style="font-weight:600;color:var(--on-surface-var);">#${scorer.nr}</span>`;
+    const tag = ev.goalType==='penalty'?' · penalty':(ev.goalType==='own'?' · own goal':'');
+    sub=`Goal — ${sideName}${tag}`;
+  } else if(ev.type==='yellow'){
+    ico=`<div class="eico"><span class="cardico y"></span></div>`;
+    title=`${p.name} <span style="font-weight:600;color:var(--on-surface-var);">#${p.nr}</span>`;
+    sub=`Yellow card — ${teamOf(ev.pid)==='home'?HOME.short:AWAY.short}`;
+  } else if(ev.type==='red'){
+    ico=`<div class="eico"><span class="cardico r"></span></div>`;
+    title=`${p.name} <span style="font-weight:600;color:var(--on-surface-var);">#${p.nr}</span>`;
+    sub=`Red card (sent off) — ${teamOf(ev.pid)==='home'?HOME.short:AWAY.short}`;
+  } else if(ev.type==='sub'){
+    const pin=pById(ev.inId), pout=pById(ev.outId);
+    ico=`<div class="eico" style="background:#e8f0fe;">${I.swap.replace('width="20" height="20"','width="17" height="17"').replace('fill="currentColor"','fill="#1a73e8"')}</div>`;
+    title=`<span style="color:var(--green);font-weight:700;">▲</span> ${pin.name} <span style="color:var(--on-surface-var);font-weight:600;">#${pin.nr}</span>`;
+    sub=`<span style="color:var(--rbfa-red-dark);font-weight:700;">▼</span> ${pout.name} #${pout.nr} — ${ev.team==='home'?HOME.short:AWAY.short}`;
+  }
+  return `
+  <div class="evt">
+    <div class="emin">${ev.minute}'</div>
+    ${ico}
+    <div class="etxt"><div class="etitle">${title}</div><div class="esub">${sub}</div></div>
+    ${allowDelete?`<button class="edel" onclick="deleteEvent(${ev.id})" title="Delete">${I.trash}</button>`:''}
+  </div>`;
+}
+function YellowRedRow(yEv){  // derived display for the automatic second-caution red (US-MI-13)
+  const p=pById(yEv.pid);
+  return `
+  <div class="evt" style="background:#fff7f6;">
+    <div class="emin">${yEv.minute}'</div>
+    <div class="eico"><span class="cardico yr"></span></div>
+    <div class="etxt"><div class="etitle">${p.name} <span style="font-weight:600;color:var(--on-surface-var);">#${p.nr}</span></div>
+      <div class="esub">Yellow/red — second caution, sent off <span style="color:var(--on-surface-var);">(auto)</span></div></div>
+    <div style="width:34px;flex:0 0 34px;"></div>
+  </div>`;
+}
+
+/* ---------- Live overview: line-ups (US-MI-08) ---------- */
+function LineupsView(){
+  const block=(key)=>{
+    const t=team(key);
+    const pitch=onPitch(key);
+    const bench=benchAvailable(key);
+    const off=[...state.sentOff].filter(pid=>teamOf(pid)===key).map(pById).sort((a,b)=>a.nr-b.nr);
+    return `
+      <div class="section-title" style="margin-left:16px;">${t.name} · on pitch ${pitch.length}</div>
+      <div style="background:#fff;">${pitch.map(p=>lineupRow(p,'pitch')).join('')}</div>
+      <div class="section-title" style="margin-left:16px;">Bench (${bench.length}) · subs used ${state.subsUsed[key]}/${subRules().maxSubs}</div>
+      <div style="background:#fff;">${bench.length?bench.map(p=>lineupRow(p,'bench')).join(''):emptyMini('No substitutes left.')}</div>
+      ${off.length?`<div class="section-title" style="margin-left:16px;">Sent off (${off.length})</div><div style="background:#fff;">${off.map(p=>lineupRow(p,'off')).join('')}</div>`:''}`;
+  };
+  return `${block('home')}<div style="height:8px"></div>${block('away')}`;
+}
+function lineupRow(p,kind){
+  const yc=state.yellowCount[p.pid]||0;
+  const cards = yc>0?'<span class="cardico y" style="margin-left:6px;"></span>'+(yc>1?'<span class="cardico yr" style="margin-left:3px;"></span>':''):'';
+  const red = state.sentOff.has(p.pid)&&yc<2?'<span class="cardico r" style="margin-left:6px;"></span>':'';
+  return `
+  <div class="row static">
+    <div class="num">${p.nr}</div>
+    <div style="flex:1;"><div class="pname">${p.name}${p.captain?' <span class="badge amber" style="margin-left:4px;">C</span>':''}${cards}${red}</div>
+      ${posSub(p)}</div>
+    ${kind==='off'?'<span class="badge red">Sent off</span>':(kind==='bench'?'<span class="badge grey">Bench</span>':'<span class="badge green">On pitch</span>')}
+  </div>`;
+}
+function emptyMini(t){return `<div style="padding:12px 16px;color:var(--on-surface-var);font-size:13px;">${t}</div>`;}
+function posSub(p){return p.pos==='Goalkeeper' ? '<div class="psub">'+p.pos+'</div>' : '';}
+
+/* ---------- Add event entry point — type tiles (US-MI-03) ---------- */
+function openEventPicker(){
+  openSheet(`
+    <h3>Add match event</h3>
+    <p style="color:var(--on-surface-var);font-size:13px;margin:0 0 6px;">Minute ${defaultEventMinute()}' · ${state.half===1?'first':'second'} half. Choose the event type.</p>
+    <div class="tilegrid">
+      <div class="tile" onclick="openGoalForm()">
+        <div class="ticon" style="background:var(--green-bg);">${I.ball.replace('fill="currentColor"','fill="#1e8e3e"')}</div>
+        <div class="tl">Goal</div><div class="ts">Team, scorer, minute & type</div>
+      </div>
+      <div class="tile" onclick="openCardForm('yellow')">
+        <div class="ticon" style="background:#fff7d6;"><span class="cardico y" style="width:18px;height:24px;"></span></div>
+        <div class="tl">Yellow card</div><div class="ts">Caution for a player</div>
+      </div>
+      <div class="tile" onclick="openCardForm('red')">
+        <div class="ticon" style="background:var(--red-bg);"><span class="cardico r" style="width:18px;height:24px;"></span></div>
+        <div class="tl">Red card</div><div class="ts">Direct sending-off</div>
+      </div>
+    </div>
+    <p style="color:var(--on-surface-var);font-size:12.5px;margin:10px 0 0;">Looking to make a substitution? Use the <b>Substitution</b> button on the live screen.</p>
+    <div style="height:6px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`);
+}
+
+/* ---------- Goal form (US-MI-04) ---------- */
+function openGoalForm(){
+  state.form={kind:'goal', team:null, goalType:'regular', scorerPid:null, minute:defaultEventMinute()};
+  refreshSheet(goalBody());
+}
+function goalBody(){
+  const f=state.form;
+  // For an own goal, the scorer is an opponent player; the goal is credited to f.team.
+  const scorerTeam = f.team ? (f.goalType==='own'?other(f.team):f.team) : null;
+  const list = scorerTeam ? onPitch(scorerTeam) : [];
+  return `
+    <h3>Register goal</h3>
+    ${TeamSelector('selGoalTeam')}
+    ${f.team?`
+      <label style="display:block;font-size:13px;color:var(--on-surface-var);margin-bottom:6px;font-weight:500;">Goal type</label>
+      <div class="optrow" style="margin-bottom:14px;">
+        ${goalTypeOpt('regular','Regular')}${goalTypeOpt('penalty','Penalty')}${goalTypeOpt('own','Own goal')}
+      </div>
+      ${f.goalType==='own'?`<div class="banner info" style="margin-bottom:12px;">${I.info}<div>Own goal — select the <b>${(scorerTeam==='home'?HOME.short:AWAY.short)}</b> player who scored it. The goal counts for <b>${(f.team==='home'?HOME.short:AWAY.short)}</b>.</div></div>`:''}
+      <label style="display:block;font-size:13px;color:var(--on-surface-var);margin-bottom:6px;font-weight:500;">${f.goalType==='own'?'Own-goal player':'Scorer'} (on pitch)</label>
+      <div class="picklist">${pickRows(list, f.scorerPid, 'setGoalScorer')}</div>
+      ${MinuteStepper()}
+    `:`<p style="color:var(--on-surface-var);font-size:13px;">Select the team that scored to continue.</p>`}
+    <button class="btn btn-primary" style="margin-top:14px;" ${f.team&&f.scorerPid?'':'disabled'} onclick="confirmGoal()">${I.ball.replace('width="20" height="20"','width="18" height="18"')} Register goal</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`;
+}
+function goalTypeOpt(v,label){ return `<button class="opt ${state.form.goalType===v?'on':''}" onclick="setGoalType('${v}')">${label}</button>`; }
+function setGoalType(v){ state.form.goalType=v; state.form.scorerPid=null; refreshSheet(goalBody()); }
+function setGoalScorer(pid){ state.form.scorerPid=pid; refreshSheet(goalBody()); }
+function confirmGoal(){
+  const f=state.form;
+  const reverted=pushEvent({type:'goal', creditedTeam:f.team, scorerPid:f.scorerPid, goalType:f.goalType, minute:clampMin(f.minute)});
+  closeSheet(); render();
+  const sc=pById(f.scorerPid);
+  snack('Goal registered — '+sc.name+(f.goalType==='own'?' (own goal)':'')+', '+clampMin(f.minute)+"'. Score "+state.score.home+'–'+state.score.away+'.'+(reverted?' Match sheet reopened for correction — reconfirm before submitting.':''));
+}
+
+/* ---------- Card form (US-MI-05 yellow / US-MI-06 red, US-MI-13 auto) ---------- */
+function openCardForm(color){
+  state.form={kind:'card', color, team:null, pid:null, minute:defaultEventMinute()};
+  refreshSheet(cardBody());
+}
+function cardBody(){
+  const f=state.form;
+  const list = f.team?onPitch(f.team):[];
+  const isRed=f.color==='red';
+  return `
+    <h3>Register ${isRed?'red':'yellow'} card</h3>
+    <div style="display:flex;align-items:center;gap:8px;margin:-2px 0 14px;color:var(--on-surface-var);font-size:13px;">
+      <span class="cardico ${isRed?'r':'y'}" style="width:16px;height:21px;"></span>${isRed?'Direct sending-off.':'Caution — a second yellow becomes an automatic yellow/red.'}
+    </div>
+    ${TeamSelector('selCardTeam')}
+    ${f.team?`
+      <label style="display:block;font-size:13px;color:var(--on-surface-var);margin-bottom:6px;font-weight:500;">Player (on pitch)</label>
+      <div class="picklist">${pickRows(list, f.pid, 'setCardPlayer', true)}</div>
+      ${MinuteStepper()}
+    `:`<p style="color:var(--on-surface-var);font-size:13px;">Select a team to continue.</p>`}
+    <button class="btn ${isRed?'btn-primary':'btn-primary'}" style="margin-top:14px;" ${f.team&&f.pid?'':'disabled'} onclick="confirmCard()">Register ${isRed?'red':'yellow'} card</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`;
+}
+function setCardPlayer(pid){ state.form.pid=pid; refreshSheet(cardBody()); }
+function confirmCard(){
+  const f=state.form;
+  const min=clampMin(f.minute);
+  const priorY=state.yellowCount[f.pid]||0;
+  if(f.color==='yellow'){
+    const reverted=pushEvent({type:'yellow', pid:f.pid, minute:min});
+    closeSheet(); render();
+    const p=pById(f.pid);
+    const tail=reverted?' Match sheet reopened for correction — reconfirm before submitting.':'';
+    if(priorY+1>=2) snack('Second yellow for '+p.name+' — automatic yellow/red. Player sent off.'+tail);
+    else snack('Yellow card — '+p.name+', '+min+"'."+tail);
+  } else {
+    const reverted=pushEvent({type:'red', pid:f.pid, minute:min});
+    closeSheet(); render();
+    snack('Red card — '+pById(f.pid).name+' sent off, '+min+"'."+(reverted?' Match sheet reopened for correction — reconfirm before submitting.':''));
+  }
+}
+
+/* ---------- Substitution form (US-MI-01) ----------
+   Step-by-step "wissel" wizard: pick the team, then the player coming
+   off, then the player coming on — one decision at a time, with a
+   live OUT⇄IN preview, so the REF can never lose track mid-swap.
+   Every swap is checked against subRules() for the active match's
+   competition (US-MI-01 / competition regulations). ---------- */
+function openSubForm(){
+  state.form={kind:'sub', team:null, outId:null, inId:null, minute:defaultEventMinute()};
+  openSheet(subBody());
+}
+function subSwapPreview(f){
+  const pout=f.outId?pById(f.outId):null, pin=f.inId?pById(f.inId):null;
+  if(!pout && !pin) return '';
+  return `
+  <div class="swap-preview">
+    <div class="swap-side">
+      <div class="swap-tag off">${I.warn.replace('width="20" height="20"','width="13" height="13"').replace('fill="currentColor"','fill="var(--rbfa-red-dark)"')} OFF</div>
+      ${pout?`<div class="swap-name">#${pout.nr} ${pout.name}</div>`:`<div class="swap-name muted">Choose player…</div>`}
+      ${pout?`<button class="swap-change" onclick="setSubOut(null)">Change</button>`:''}
+    </div>
+    <div class="swap-arrow">${I.swap.replace('width="20" height="20"','width="20" height="20"').replace('fill="currentColor"','fill="#1a73e8"')}</div>
+    <div class="swap-side">
+      <div class="swap-tag on">${I.check.replace('width="20" height="20"','width="13" height="13"').replace('fill="#fff"','fill="var(--green)"')} ON</div>
+      ${pin?`<div class="swap-name">#${pin.nr} ${pin.name}</div>`:`<div class="swap-name muted">Choose player…</div>`}
+      ${pin?`<button class="swap-change" onclick="setSubIn(null)">Change</button>`:''}
+    </div>
+  </div>`;
+}
+function subBody(){
+  const f=state.form;
+  const rules=subRules();
+  const reached = f.team && state.subsUsed[f.team]>=rules.maxSubs;
+  const outList = f.team?onPitch(f.team):[];
+  const inList = f.team?benchAvailable(f.team):[];
+  let step='';
+  if(f.team && !reached){
+    if(!f.outId){
+      step=`
+      <label style="display:block;font-size:13px;color:var(--on-surface-var);margin-bottom:6px;font-weight:500;">Step 1 of 2 — who is coming off? (on pitch)</label>
+      <div class="picklist">${pickRows(outList, f.outId, 'setSubOut')}</div>`;
+    } else if(!f.inId){
+      step=`
+      ${subSwapPreview(f)}
+      <label style="display:block;font-size:13px;color:var(--on-surface-var);margin:14px 0 6px;font-weight:500;">Step 2 of 2 — who is coming on? (bench)</label>
+      <div class="picklist">${inList.length?pickRows(inList, f.inId, 'setSubIn'):emptyMini('No substitutes available on the bench.')}</div>`;
+    } else {
+      step=`${subSwapPreview(f)}${MinuteStepper()}`;
+    }
+  }
+  return `
+    <h3>Substitution</h3>
+    <div class="banner info" style="margin-bottom:14px;">${I.info}<div>${rules.note}</div></div>
+    ${TeamSelector('selSubTeam')}
+    ${f.team?(reached?`<div class="banner err">${I.warn}<div>${team(f.team).name} has used all ${rules.maxSubs} substitutions allowed under these regulations.</div></div>`:step)
+      :`<p style="color:var(--on-surface-var);font-size:13px;">Select a team to continue.</p>`}
+    ${f.team&&!reached?`<div class="section-title" style="margin:10px 0 0;padding:0;">Subs used: ${state.subsUsed[f.team]}/${rules.maxSubs}</div>`:''}
+    <button class="btn btn-primary" style="margin-top:14px;" ${f.team&&f.outId&&f.inId&&!reached?'':'disabled'} onclick="confirmSub()">${I.swap.replace('width="20" height="20"','width="18" height="18"')} Register substitution</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`;
+}
+function setSubOut(pid){ state.form.outId=pid; state.form.inId=null; refreshSheet(subBody()); }
+function setSubIn(pid){ state.form.inId=pid; refreshSheet(subBody()); }
+function confirmSub(){
+  const f=state.form;
+  const reverted=pushEvent({type:'sub', team:f.team, outId:f.outId, inId:f.inId, minute:clampMin(f.minute)});
+  closeSheet(); render();
+  const pin=pById(f.inId), pout=pById(f.outId);
+  snack('Substitution — '+pin.name+' on for '+pout.name+', '+clampMin(f.minute)+"'."+(reverted?' Match sheet reopened for correction — reconfirm before submitting.':''));
+}
+
+/* ---------- Shared form bits ---------- */
+function TeamSelector(fn){
+  const f=state.form;
+  return `
+  <div class="teamsel">
+    <button class="${f.team==='home'?'on':''}" onclick="setFormTeam('home')">
+      <div>${HOME.short}</div><div class="ts-side">Home${state.score?'':''}</div></button>
+    <button class="${f.team==='away'?'on':''}" onclick="setFormTeam('away')">
+      <div>${AWAY.short}</div><div class="ts-side">Away</div></button>
+  </div>`;
+}
+function setFormTeam(key){
+  const f=state.form; f.team=key; f.pid=null; f.outId=null; f.inId=null; f.scorerPid=null;
+  if(f.kind==='goal') refreshSheet(goalBody());
+  else if(f.kind==='card') refreshSheet(cardBody());
+  else refreshSheet(subBody());
+}
+function MinuteStepper(){
+  // Defaults to the live match clock when the form is opened (incl. during
+  // half-time, when the clock itself is paused), but the REF can still
+  // correct it here — e.g. an event noticed slightly late, or anything
+  // logged retroactively at half-time.
+  const f=state.form;
+  return `
+  <label style="display:block;font-size:13px;color:var(--on-surface-var);margin:12px 0 6px;font-weight:500;">Match minute</label>
+  <div class="stepper">
+    <button onclick="stepMinute(-1)">−</button>
+    <div class="mval">${f.minute}'</div>
+    <button onclick="stepMinute(1)">+</button>
+  </div>`;
+}
+function stepMinute(d){
+  const f=state.form; f.minute=Math.max(1,(f.minute||1)+d);
+  if(f.kind==='goal') refreshSheet(goalBody());
+  else if(f.kind==='card') refreshSheet(cardBody());
+  else refreshSheet(subBody());
+}
+function clampMin(v){ return Math.max(1, parseInt(v,10)||1); }
+function pickRows(list, sel, fn, showYellow){
+  if(!list.length) return emptyMini('No eligible players.');
+  return list.map(p=>{
+    const yc=state.yellowCount[p.pid]||0;
+    const yflag = showYellow&&yc>0?'<span class="cardico y" style="margin-left:6px;"></span>':'';
+    return `
+    <div class="row" onclick="${fn}('${p.pid}')">
+      <div class="check radio ${sel===p.pid?'on':''}">${sel===p.pid?I.check:''}</div>
+      <div class="num">${p.nr}</div>
+      <div style="flex:1;"><div class="pname">${p.name}${p.captain?' <span class="badge amber" style="margin-left:4px;">C</span>':''}${yflag}</div>
+        ${posSub(p)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- Event source-of-truth mutations ---------- */
+function pushEvent(ev){ ev.id=state.seq; ev.seq=state.seq++; state.events.push(ev); return reopenForCorrectionIfNeeded(); }
+// The REF can keep correcting the match sheet (events, cards, subs) right up
+// until it is actually submitted to the federation. A confirmed sheet is not
+// a hard lock — any correction simply un-confirms it so the REF reconfirms
+// before submitting (US-FS-03 extended to the whole post-match phase).
+function reopenForCorrectionIfNeeded(){
+  if(state.sheet.home==='CONFIRMED'){
+    state.sheet.home='VALIDATED'; state.sheet.away='VALIDATED';
+    return true;
+  }
+  return false;
+}
+function deleteEvent(id){   // US-MI-07 / US-FS-03
+  const ev=state.events.find(e=>e.id===id);
+  if(!ev) return;
+  const label = ev.type==='goal'?'goal':(ev.type==='sub'?'substitution':(ev.type==='red'?'red card':'yellow card'));
+  openSheet(`
+    <h3>Delete ${label}?</h3>
+    <p style="color:var(--on-surface-var);line-height:1.5;margin:0 0 14px;">The event is removed and the score, cards and players-on-pitch are recalculated. ${ev.type==='yellow'?'If this was a second yellow, the linked yellow/red is reversed too.':''}</p>
+    <button class="btn btn-primary" onclick="doDeleteEvent(${id})">${I.trash.replace('fill="#5f6368"','fill="#fff"')} Delete event</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`);
+}
+function doDeleteEvent(id){
+  state.events=state.events.filter(e=>e.id!==id);
+  const reverted=reopenForCorrectionIfNeeded();
+  closeSheet(); render();
+  snack('Event deleted.'+(reverted?' Match sheet reopened for correction — reconfirm before submitting.':''));
+}
+
+/* ---------- End of half / match (US-MI-09/10/11/12) ---------- */
+function confirmEndHalf(which){
+  const isMatch = which==='match';
+  state.form={added:''};
+  openSheet(`
+    <h3>${isMatch?'End the match?':'End the first half?'}</h3>
+    <p style="color:var(--on-surface-var);line-height:1.5;margin:0 0 14px;">${isMatch
+      ? 'This sets the status to <b>Full time</b>, locks the final score and ends event registration. You then review and finalise the match sheet.'
+      : 'This sets the status to <b>Half-time</b> and locks first-half event registration.'}</p>
+    <div class="field"><label>Added time this half (optional, minutes)</label>
+      <input id="addedT" type="number" min="0" max="20" inputmode="numeric" placeholder="e.g. 3" oninput="state.form.added=this.value"/></div>
+    <button class="btn ${isMatch?'btn-primary':'btn-dark'}" onclick="${isMatch?'endMatch()':"endFirstHalf()"}">${isMatch?I.stop+' End match':I.flag+' End first half'}</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`);
+}
+function endFirstHalf(){
+  state.addedTime.first = state.form.added?parseInt(state.form.added,10):null;   // US-MI-12
+  state.matchStatus='HALF_TIME';   // §1
+  state.nowMin=960;                 // ~16:00 demo wall clock
+  closeSheet(); render();
+  snack('First half ended.'+(state.addedTime.first?' Added time: '+state.addedTime.first+" min.":''));
+}
+function confirmSecondHalf(){
+  openSheet(`
+    <h3>Start the second half?</h3>
+    <p style="color:var(--on-surface-var);line-height:1.5;margin:0 0 14px;">Status returns to <b>In progress</b> and event registration is re-enabled.</p>
+    <button class="btn btn-green" onclick="startSecondHalf()">${I.play} Start second half</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`);
+}
+function startSecondHalf(){
+  state.matchStatus='IN_PROGRESS'; state.half=2; state.liveMinute=46;
+  closeSheet(); render();
+  snack('Second half under way.');
+}
+function endMatch(){
+  state.addedTime.second = state.form.added?parseInt(state.form.added,10):null;
+  state.matchStatus='ENDED';   // §1 — match lifecycle ends here
+  state.nowMin=1020;           // ~17:00 demo wall clock
+  closeSheet(); go('post');
+  snack('Match ended — final score '+state.score.home+'–'+state.score.away+'.');
+}
+function openLiveMenu(){
+  openSheet(`
+    <div class="menu-item" onclick="closeSheet();go('dashboard')">${I.back.replace('width="24" height="24"','width="22" height="22"')}<div>Back to my matches</div></div>
+    <div class="menu-item" onclick="closeSheet();resetDemo()">${I.trash.replace('width="18" height="18"','width="22" height="22"')}<div>Reset demo</div></div>`);
+}
+
+/* ============================================================
+   GOAL 5 — FINALIZE AND SUBMIT MATCH SHEET
+   Post-match: review/correct → confirm → submit (US-FS-*)
+   One screen whose content evolves with the sheet status.
+   ============================================================ */
+function ScPost(){
+  const sheetSt=state.sheet.home; // home/away move in lockstep post-match
+  const ended = sheetSt==='VALIDATED';      // ENDED, not yet confirmed
+  const confirmed = sheetSt==='CONFIRMED';
+  const submitted = sheetSt==='SUBMITTED';
+  const canEdit = !submitted;   // corrections stay possible right up to federation submission
+  const m=activeMatch();
+  return `
+  <div class="appbar">
+    <button class="iconbtn" onclick="go('dashboard')">${I.back}</button>
+    <span class="title">${submitted?'Match sheet':'Finalise match sheet'}</span>
+  </div>
+  <div class="scroll pad">
+    <!-- Final score (US-FS-01) -->
+    <div class="card"><div class="pad" style="text-align:center;">
+      <div style="font-size:12px;color:var(--on-surface-var);margin-bottom:6px;">${m.competition} · ${m.round} · ${matchBadge('ENDED')}</div>
+      <div class="vs" style="align-items:center;">
+        <div class="team"><div class="crest" style="background:var(--rbfa-red)">${initials(HOME.name)}</div><div style="font-weight:600;font-size:13px;">${HOME.short}</div></div>
+        <div class="mid"><div style="font-size:30px;color:#1f1f1f;font-weight:800;">${state.score.home} : ${state.score.away}</div><div style="font-size:11px;color:var(--on-surface-var);">Full time</div></div>
+        <div class="team"><div class="crest" style="background:#5f6368">${initials(AWAY.name)}</div><div style="font-weight:600;font-size:13px;">${AWAY.short}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--on-surface-var);margin-top:10px;">Kick-off ${state.kickoffActual||m.kickoff}${state.addedTime.first?' · +'+state.addedTime.first+"' (1st)":''}${state.addedTime.second?' · +'+state.addedTime.second+"' (2nd)":''}</div>
+    </div></div>
+
+    ${submitted?`<div class="banner ok">${I.checkc}<div><b>Submitted to the federation.</b> ${state.submittedFedAt}. This is the official record.</div></div>`
+      : confirmed?`<div class="banner ok">${I.checkc}<div><b>Match sheet confirmed.</b> Ready for submission. You can still correct it below — any change will reopen it for reconfirmation.</div></div>`
+      : `<div class="banner info">${I.info}<div>Review all events and player data. Corrections remain possible until the sheet is submitted to the federation.</div></div>`}
+
+    <!-- Events (US-FS-01); editable up to submission (US-FS-03 extended) -->
+    <div class="section-title">Match events · ${state.events.length}</div>
+    ${canEdit?`<div class="qa-row" style="padding:0 0 10px;">
+      <button class="qa tonal" onclick="openEventPicker()">${I.plus} Add event</button>
+      <button class="qa tonal" onclick="openSubForm()">${I.swap} Substitution</button>
+    </div>`:''}
+    <div class="card">${state.events.length?TimelineView(canEdit):emptyMini('No events were registered.')}</div>
+
+    <!-- Line-ups & subs both teams (US-FS-01) -->
+    ${PostTeamBlock('home')}
+    ${PostTeamBlock('away')}
+
+    ${canEdit?ValidationSummary():''}
+
+    ${confirmed||submitted?RemarkBlock(submitted):''}
+
+    ${submitted?`<div class="card"><div class="pad">
+        <div class="meta">${I.clock.replace('fill="currentColor"','fill="#5f6368"')}<div><div class="mlabel">Submitted on</div><div class="mval">${state.submittedFedAt}</div></div></div>
+        <div class="meta">${I.fed.replace('width="22" height="22"','width="18" height="18"').replace('fill="currentColor"','fill="#5f6368"')}<div><div class="mlabel">Status</div><div class="mval">${sheetBadge('SUBMITTED')}</div></div></div>
+      </div></div>
+      <button class="btn btn-outline" onclick="snack('Demo: PDF of the official match sheet generated.')">${I.download} Download PDF copy</button>
+      <div style="height:8px"></div>`:''}
+
+    ${confirmed&&!submitted?SubmitPanel():''}
+    <div style="height:8px"></div>
+  </div>
+  ${ended?`<div class="bottom-bar">
+    <button class="btn btn-green" ${ValidationOk()?'':'disabled'} onclick="confirmSheet()">${I.check.replace('fill="#fff"','fill="#fff"')} Confirm match sheet</button>
+    ${ValidationOk()?'':'<div style="text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:8px;">Resolve the issues above before confirming.</div>'}
+  </div>`:''}
+  ${submitted?`<div class="bottom-bar"><button class="btn btn-primary" onclick="go('dashboard')">Back to my matches</button></div>`:''}`;
+}
+function PostTeamBlock(key){
+  const t=team(key);
+  const starters=t.players.filter(p=>p.role==='starter').sort((a,b)=>a.nr-b.nr);
+  const usedSubs=t.players.filter(p=>state.cameOn.has(p.pid)).sort((a,b)=>a.nr-b.nr);
+  const line=(p)=>{
+    const yc=state.yellowCount[p.pid]||0;
+    const cards=(yc>0?'<span class="cardico y" style="margin-left:6px;"></span>':'')+(yc>1?'<span class="cardico yr" style="margin-left:3px;"></span>':'')+((state.sentOff.has(p.pid)&&yc<2)?'<span class="cardico r" style="margin-left:6px;"></span>':'');
+    return `<div style="display:flex;gap:10px;align-items:center;padding:5px 0;font-size:14px;"><span class="num" style="width:28px;height:28px;flex:0 0 28px;font-size:12px;">${p.nr}</span>${p.name}${p.captain?' <span class="badge amber" style="margin-left:6px;">C</span>':''}${cards}</div>`;
+  };
+  return `
+  <div class="section-title">${t.name}</div>
+  <div class="card"><div class="pad">
+    <div style="font-size:12px;color:var(--on-surface-var);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Starting XI</div>
+    ${starters.map(line).join('')}
+    <div style="font-size:12px;color:var(--on-surface-var);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px;">Substitutes used (${usedSubs.length})</div>
+    ${usedSubs.length?usedSubs.map(line).join(''):'<div style="color:var(--on-surface-var);font-size:13px;">None.</div>'}
+    <div style="font-size:12px;color:var(--on-surface-var);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px;">Officials</div>
+    ${t.officials.map(o=>`<div style="font-size:13.5px;padding:3px 0;">${o.name} — <span style="color:var(--on-surface-var)">${o.role}</span>${o.delegate?' <span class="badge amber" style="margin-left:4px;">Delegate</span>':''}</div>`).join('')}
+  </div></div>`;
+}
+function ValidationChecksPost(){   // US-FS-04 — internal consistency
+  const goals=state.events.filter(e=>e.type==='goal');
+  return [
+    {label:'Final score recorded ('+state.score.home+'–'+state.score.away+')', ok:true},
+    {label:'Every goal has a scorer assigned', ok:goals.every(g=>!!g.scorerPid)},
+    {label:'Every card is attributed to a player', ok:state.events.filter(e=>e.type==='yellow'||e.type==='red').every(c=>!!c.pid)},
+    {label:'No team exceeded '+subRules().maxSubs+' substitutions', ok:state.subsUsed.home<=subRules().maxSubs && state.subsUsed.away<=subRules().maxSubs},
+  ];
+}
+function ValidationOk(){ return ValidationChecksPost().every(c=>c.ok); }
+function ValidationSummary(){
+  const checks=ValidationChecksPost();
+  return `
+  <div class="section-title">Pre-confirmation checks</div>
+  <div class="card"><div class="pad">
+    ${checks.map(c=>`<div class="req ${c.ok?'met':'fail'}">${c.ok?I.check.replace('fill="#fff"','fill="#1e8e3e"'):I.warn.replace('width="20" height="20"','width="16" height="16"')}<div>${c.label}</div></div>`).join('')}
+  </div></div>`;
+}
+function RemarkBlock(readonly){   // US-FS-05
+  return `
+  <div class="section-title">Match remark (optional)</div>
+  <div class="card"><div class="pad">
+    ${readonly
+      ? `<div style="font-size:14px;color:${state.remark?'var(--on-surface)':'var(--on-surface-var)'};">${state.remark||'No remark added.'}</div>`
+      : `<div class="field" style="margin:0;"><textarea id="remarkTxt" placeholder="Document any incident or exceptional circumstance for the federation..." oninput="state.remark=this.value">${state.remark}</textarea></div>`}
+  </div></div>`;
+}
+function confirmSheet(){   // US-FS-02
+  openSheet(`
+    <h3>Confirm match sheet?</h3>
+    <p style="color:var(--on-surface-var);line-height:1.5;margin:0 0 14px;">All recorded data — events, score and squads — is marked as reviewed and ready for submission to the federation. You can still make corrections afterwards; doing so will reopen the sheet and ask you to reconfirm.</p>
+    <button class="btn btn-green" onclick="doConfirmSheet()">${I.check.replace('fill="#fff"','fill="#fff"')} Confirm match sheet</button>
+    <div style="height:8px"></div>
+    <button class="btn btn-text" style="width:100%" onclick="closeSheet()">Cancel</button>`);
+}
+function doConfirmSheet(){
+  state.sheet.home='CONFIRMED'; state.sheet.away='CONFIRMED';   // §2
+  state.nowMin=1025;
+  closeSheet(); render();
+  snack('Match sheet confirmed — ready for submission.');
+}
+function SubmitPanel(){   // US-FS-06/07
+  const deadline=submissionDeadline();
+  return `
+  <div class="section-title">Submit to federation</div>
+  <div class="card"><div class="pad">
+    <div class="meta">${I.cal}<div><div class="mlabel">Submission deadline</div><div class="mval">${deadline} · 23:59</div></div></div>
+    <div class="meta">${I.fed.replace('width="22" height="22"','width="16" height="16"').replace('fill="currentColor"','fill="#5f6368"')}<div><div class="mlabel">Channel</div><div class="mval">RBFA digital platform</div></div></div>
+  </div></div>
+  <button class="btn btn-primary" onclick="submitToFederation()">${I.fed} Submit confirmed match sheet</button>`;
+}
+function submissionDeadline(){   // next working day after the match (assumption #7)
+  const d=new Date(activeMatch().date+'T00:00:00');
+  d.setDate(d.getDate()+1);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1);
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
+function submitToFederation(){   // US-FS-06
+  state.sheet.home='SUBMITTED'; state.sheet.away='SUBMITTED';
+  state.nowMin=1030;
+  state.submittedFedAt = activeMatch().dateLabel+', '+fmtTime(state.nowMin);   // US-FS-08 timestamp
+  render();
+  snack('Submitted to the federation at '+fmtTime(state.nowMin)+'.');
+}
+
+/* boot */
+render();
+</script>
+</body>
+</html>
